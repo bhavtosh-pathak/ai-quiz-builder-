@@ -1,0 +1,656 @@
+// const asyncHandler = require('express-async-handler');
+// const Quiz = require('../models/Quiz');
+// const Attempt = require('../models/Attempt');
+
+// // @desc    Create a new quiz (manual, empty, or pre-filled with AI questions)
+// // @route   POST /api/quizzes
+// // @access  Private/Teacher
+// const createQuiz = asyncHandler(async (req, res) => {
+//   const {
+//     title,
+//     description,
+//     subject,
+//     duration,
+//     negativeMarking,
+//     shuffleQuestions,
+//     shuffleOptions,
+//     questions,
+//     aiGenerated,
+//     aiPrompt,
+//   } = req.body;
+
+//   const quiz = await Quiz.create({
+//     title,
+//     description,
+//     subject,
+//     duration,
+//     negativeMarking,
+//     shuffleQuestions,
+//     shuffleOptions,
+//     questions: questions || [],
+//     aiGenerated: !!aiGenerated,
+//     aiPrompt: aiPrompt || '',
+//     createdBy: req.user._id,
+//   });
+
+//   res.status(201).json({ success: true, quiz });
+// });
+
+// // @desc    Get all quizzes created by the logged-in teacher (with search/filter/pagination)
+// // @route   GET /api/quizzes/mine
+// // @access  Private/Teacher
+// const getMyQuizzes = asyncHandler(async (req, res) => {
+//   const { search = '', status = 'all', page = 1, limit = 9 } = req.query;
+
+//   const query = { createdBy: req.user._id };
+//   if (status !== 'all') query.status = status;
+//   if (search) query.$text = { $search: search };
+
+//   const skip = (Number(page) - 1) * Number(limit);
+
+//   const [quizzes, total] = await Promise.all([
+//     Quiz.find(query).sort({ createdAt: -1 }).skip(skip).limit(Number(limit)),
+//     Quiz.countDocuments(query),
+//   ]);
+
+//   res.json({
+//     success: true,
+//     quizzes,
+//     pagination: { total, page: Number(page), pages: Math.ceil(total / Number(limit)) },
+//   });
+// });
+
+// // @desc    Get a single quiz by id (owner sees answers, others do not)
+// // @route   GET /api/quizzes/:id
+// // @access  Private
+// const getQuizById = asyncHandler(async (req, res) => {
+//   const quiz = await Quiz.findById(req.params.id);
+//   if (!quiz) {
+//     res.status(404);
+//     throw new Error('Quiz not found');
+//   }
+
+//   const isOwner = quiz.createdBy.toString() === req.user._id.toString();
+//   if (!isOwner && req.user.role === 'teacher') {
+//     res.status(403);
+//     throw new Error('You do not have access to this quiz');
+//   }
+
+//   res.json({ success: true, quiz, isOwner });
+// });
+
+// // @desc    Update quiz metadata and/or full question list
+// // @route   PUT /api/quizzes/:id
+// // @access  Private/Teacher (owner only)
+// const updateQuiz = asyncHandler(async (req, res) => {
+//   const quiz = await Quiz.findById(req.params.id);
+//   if (!quiz) {
+//     res.status(404);
+//     throw new Error('Quiz not found');
+//   }
+//   if (quiz.createdBy.toString() !== req.user._id.toString()) {
+//     res.status(403);
+//     throw new Error('Only the quiz owner can edit this quiz');
+//   }
+//   if (quiz.status === 'published') {
+//     res.status(400);
+//     throw new Error('Published quizzes cannot be edited. Close it first to make changes.');
+//   }
+
+//   const editable = [
+//     'title',
+//     'description',
+//     'subject',
+//     'duration',
+//     'negativeMarking',
+//     'shuffleQuestions',
+//     'shuffleOptions',
+//     'questions',
+//   ];
+//   editable.forEach((field) => {
+//     if (req.body[field] !== undefined) quiz[field] = req.body[field];
+//   });
+
+//   const updated = await quiz.save();
+//   res.json({ success: true, quiz: updated });
+// });
+
+// // @desc    Delete a single question from a quiz
+// // @route   DELETE /api/quizzes/:id/questions/:questionId
+// // @access  Private/Teacher (owner only)
+// const deleteQuestion = asyncHandler(async (req, res) => {
+//   const quiz = await Quiz.findById(req.params.id);
+//   if (!quiz) {
+//     res.status(404);
+//     throw new Error('Quiz not found');
+//   }
+//   if (quiz.createdBy.toString() !== req.user._id.toString()) {
+//     res.status(403);
+//     throw new Error('Only the quiz owner can edit this quiz');
+//   }
+
+//   quiz.questions = quiz.questions.filter((q) => q._id.toString() !== req.params.questionId);
+//   await quiz.save();
+
+//   res.json({ success: true, quiz });
+// });
+
+// // @desc    Publish a quiz (makes it joinable by students via quiz code)
+// // @route   PATCH /api/quizzes/:id/publish
+// // @access  Private/Teacher (owner only)
+// const publishQuiz = asyncHandler(async (req, res) => {
+//   const quiz = await Quiz.findById(req.params.id);
+//   if (!quiz) {
+//     res.status(404);
+//     throw new Error('Quiz not found');
+//   }
+//   if (quiz.createdBy.toString() !== req.user._id.toString()) {
+//     res.status(403);
+//     throw new Error('Only the quiz owner can publish this quiz');
+//   }
+//   if (quiz.questions.length === 0) {
+//     res.status(400);
+//     throw new Error('Add at least one question before publishing');
+//   }
+
+//   quiz.status = 'published';
+//   await quiz.save();
+
+//   res.json({ success: true, quiz });
+// });
+
+// // @desc    Close a published quiz (stops new attempts)
+// // @route   PATCH /api/quizzes/:id/close
+// // @access  Private/Teacher (owner only)
+// const closeQuiz = asyncHandler(async (req, res) => {
+//   const quiz = await Quiz.findById(req.params.id);
+//   if (!quiz) {
+//     res.status(404);
+//     throw new Error('Quiz not found');
+//   }
+//   if (quiz.createdBy.toString() !== req.user._id.toString()) {
+//     res.status(403);
+//     throw new Error('Only the quiz owner can close this quiz');
+//   }
+
+//   quiz.status = 'closed';
+//   await quiz.save();
+
+//   res.json({ success: true, quiz });
+// });
+
+// // @desc    Delete an entire quiz (and its attempts)
+// // @route   DELETE /api/quizzes/:id
+// // @access  Private/Teacher (owner only)
+// const deleteQuiz = asyncHandler(async (req, res) => {
+//   const quiz = await Quiz.findById(req.params.id);
+//   if (!quiz) {
+//     res.status(404);
+//     throw new Error('Quiz not found');
+//   }
+//   if (quiz.createdBy.toString() !== req.user._id.toString()) {
+//     res.status(403);
+//     throw new Error('Only the quiz owner can delete this quiz');
+//   }
+
+//   await Attempt.deleteMany({ quiz: quiz._id });
+//   await quiz.deleteOne();
+
+//   res.json({ success: true, message: 'Quiz deleted' });
+// });
+
+// // @desc    Look up a quiz by its shareable code (student joining)
+// // @route   GET /api/quizzes/join/:code
+// // @access  Private/Student
+// const joinQuizByCode = asyncHandler(async (req, res) => {
+//   const quiz = await Quiz.findOne({ quizCode: req.params.code.toUpperCase() });
+
+//   if (!quiz) {
+//     res.status(404);
+//     throw new Error('No quiz found with that code');
+//   }
+//   if (quiz.status !== 'published') {
+//     res.status(400);
+//     throw new Error('This quiz is not currently open for attempts');
+//   }
+
+//   const existingAttempt = await Attempt.findOne({ quiz: quiz._id, student: req.user._id });
+//   if (existingAttempt) {
+//     res.status(400);
+//     throw new Error('You have already attempted this quiz');
+//   }
+
+//   // Strip correct answers before sending to the student
+//   const safeQuestions = quiz.questions.map((q) => ({
+//     _id: q._id,
+//     questionText: q.questionText,
+//     options: q.options,
+//     difficulty: q.difficulty,
+//     marks: q.marks,
+//   }));
+
+//   res.json({
+//     success: true,
+//     quiz: {
+//       _id: quiz._id,
+//       title: quiz.title,
+//       description: quiz.description,
+//       subject: quiz.subject,
+//       duration: quiz.duration,
+//       totalMarks: quiz.totalMarks,
+//       negativeMarking: quiz.negativeMarking,
+//       shuffleQuestions: quiz.shuffleQuestions,
+//       shuffleOptions: quiz.shuffleOptions,
+//       quizCode: quiz.quizCode,
+//       questions: safeQuestions,
+//     },
+//   });
+// });
+
+// // @desc    List published quizzes available for students to browse
+// // @route   GET /api/quizzes/available
+// // @access  Private/Student
+// const getAvailableQuizzes = asyncHandler(async (req, res) => {
+//   const { search = '', page = 1, limit = 9 } = req.query;
+
+//   const query = { status: 'published' };
+//   if (search) query.$text = { $search: search };
+
+//   const attempted = await Attempt.find({ student: req.user._id }).distinct('quiz');
+//   query._id = { $nin: attempted };
+
+//   const skip = (Number(page) - 1) * Number(limit);
+//   const [quizzes, total] = await Promise.all([
+//     Quiz.find(query)
+//       .select('title description subject duration totalMarks quizCode createdAt questions')
+//       .sort({ createdAt: -1 })
+//       .skip(skip)
+//       .limit(Number(limit))
+//       .populate('createdBy', 'name'),
+//     Quiz.countDocuments(query),
+//   ]);
+
+//   const shaped = quizzes.map((q) => ({
+//     _id: q._id,
+//     title: q.title,
+//     description: q.description,
+//     subject: q.subject,
+//     duration: q.duration,
+//     totalMarks: q.totalMarks,
+//     quizCode: q.quizCode,
+//     questionCount: q.questions.length,
+//     createdBy: q.createdBy?.name,
+//     createdAt: q.createdAt,
+//   }));
+
+//   res.json({
+//     success: true,
+//     quizzes: shaped,
+//     pagination: { total, page: Number(page), pages: Math.ceil(total / Number(limit)) },
+//   });
+// });
+
+// module.exports = {
+//   createQuiz,
+//   getMyQuizzes,
+//   getQuizById,
+//   updateQuiz,
+//   deleteQuestion,
+//   publishQuiz,
+//   closeQuiz,
+//   deleteQuiz,
+//   joinQuizByCode,
+//   getAvailableQuizzes,
+// };
+
+
+
+
+
+const asyncHandler = require('express-async-handler');
+const Quiz = require('../models/Quiz');
+const Attempt = require('../models/Attempt');
+
+// @desc    Create a new quiz (manual, empty, or pre-filled with AI questions)
+// @route   POST /api/quizzes
+// @access  Private/Teacher
+const createQuiz = asyncHandler(async (req, res) => {
+  const {
+    title,
+    description,
+    subject,
+    duration,
+    negativeMarking,
+    shuffleQuestions,
+    shuffleOptions,
+    questions,
+    aiGenerated,
+    aiPrompt,
+  } = req.body;
+
+  const quiz = await Quiz.create({
+    title,
+    description,
+    subject,
+    duration,
+    negativeMarking,
+    shuffleQuestions,
+    shuffleOptions,
+    questions: questions || [],
+    aiGenerated: !!aiGenerated,
+    aiPrompt: aiPrompt || '',
+    createdBy: req.user._id,
+  });
+
+  res.status(201).json({ success: true, quiz });
+});
+
+// @desc    Get all quizzes created by the logged-in teacher (with search/filter/pagination)
+// @route   GET /api/quizzes/mine
+// @access  Private/Teacher
+const getMyQuizzes = asyncHandler(async (req, res) => {
+  const { search = '', status = 'all', page = 1, limit = 9 } = req.query;
+
+  const query = { createdBy: req.user._id };
+  if (status !== 'all') query.status = status;
+  if (search) query.$text = { $search: search };
+
+  const skip = (Number(page) - 1) * Number(limit);
+
+  const [quizzes, total] = await Promise.all([
+  Quiz.find(query)
+  .sort({ createdAt: -1 })
+  .skip(skip)
+  .limit(Number(limit))
+  .select('title description subject duration totalMarks quizCode questions status createdAt publishedAt'),
+    Quiz.countDocuments(query),
+  ]);
+  const updatedQuizzes = quizzes.map((q) => {
+  let displayStatus = q.status;
+
+  if (q.status === 'published' && q.publishedAt) {
+    const expiresAt = q.publishedAt.getTime() + q.duration * 60 * 1000;
+
+    displayStatus = Date.now() > expiresAt ? 'expired' : 'live';
+  }
+
+  return {
+    ...q.toObject(),
+    status: displayStatus
+  };
+});
+
+  res.json({
+    success: true,
+    quizzes:updatedQuizzes,
+    pagination: { total, page: Number(page), pages: Math.ceil(total / Number(limit)) },
+  });
+});
+
+// @desc    Get a single quiz by id (owner sees answers, others do not)
+// @route   GET /api/quizzes/:id
+// @access  Private
+const getQuizById = asyncHandler(async (req, res) => {
+  const quiz = await Quiz.findById(req.params.id);
+  if (!quiz) {
+    res.status(404);
+    throw new Error('Quiz not found');
+  }
+
+  const isOwner = quiz.createdBy.toString() === req.user._id.toString();
+  if (!isOwner && req.user.role === 'teacher') {
+    res.status(403);
+    throw new Error('You do not have access to this quiz');
+  }
+
+  res.json({ success: true, quiz, isOwner });
+});
+
+// @desc    Update quiz metadata and/or full question list
+// @route   PUT /api/quizzes/:id
+// @access  Private/Teacher (owner only)
+const updateQuiz = asyncHandler(async (req, res) => {
+  const quiz = await Quiz.findById(req.params.id);
+  if (!quiz) {
+    res.status(404);
+    throw new Error('Quiz not found');
+  }
+  if (quiz.createdBy.toString() !== req.user._id.toString()) {
+    res.status(403);
+    throw new Error('Only the quiz owner can edit this quiz');
+  }
+  if (quiz.status === 'published') {
+    res.status(400);
+    throw new Error('Published quizzes cannot be edited. Close it first to make changes.');
+  }
+
+  const editable = [
+    'title',
+    'description',
+    'subject',
+    'duration',
+    'negativeMarking',
+    'shuffleQuestions',
+    'shuffleOptions',
+    'questions',
+  ];
+  editable.forEach((field) => {
+    if (req.body[field] !== undefined) quiz[field] = req.body[field];
+  });
+
+  const updated = await quiz.save();
+  res.json({ success: true, quiz: updated });
+});
+
+// @desc    Delete a single question from a quiz
+// @route   DELETE /api/quizzes/:id/questions/:questionId
+// @access  Private/Teacher (owner only)
+const deleteQuestion = asyncHandler(async (req, res) => {
+  const quiz = await Quiz.findById(req.params.id);
+  if (!quiz) {
+    res.status(404);
+    throw new Error('Quiz not found');
+  }
+  if (quiz.createdBy.toString() !== req.user._id.toString()) {
+    res.status(403);
+    throw new Error('Only the quiz owner can edit this quiz');
+  }
+
+  quiz.questions = quiz.questions.filter((q) => q._id.toString() !== req.params.questionId);
+  await quiz.save();
+
+  res.json({ success: true, quiz });
+});
+
+// @desc    Publish a quiz (makes it joinable by students via quiz code)
+// @route   PATCH /api/quizzes/:id/publish
+// @access  Private/Teacher (owner only)
+const publishQuiz = asyncHandler(async (req, res) => {
+  const quiz = await Quiz.findById(req.params.id);
+  if (!quiz) {
+    res.status(404);
+    throw new Error('Quiz not found');
+  }
+  if (quiz.createdBy.toString() !== req.user._id.toString()) {
+    res.status(403);
+    throw new Error('Only the quiz owner can publish this quiz');
+  }
+  if (quiz.questions.length === 0) {
+    res.status(400);
+    throw new Error('Add at least one question before publishing');
+  }
+
+  quiz.status = 'published';
+  quiz.publishedAt = new Date();
+  // publishedAt is stamped automatically by the pre('save') hook in the model
+  await quiz.save();
+
+  res.json({ success: true, quiz });
+});
+
+// @desc    Close a published quiz (stops new attempts)
+// @route   PATCH /api/quizzes/:id/close
+// @access  Private/Teacher (owner only)
+const closeQuiz = asyncHandler(async (req, res) => {
+  const quiz = await Quiz.findById(req.params.id);
+  if (!quiz) {
+    res.status(404);
+    throw new Error('Quiz not found');
+  }
+  if (quiz.createdBy.toString() !== req.user._id.toString()) {
+    res.status(403);
+    throw new Error('Only the quiz owner can close this quiz');
+  }
+
+  quiz.status = 'closed';
+  await quiz.save();
+
+  res.json({ success: true, quiz });
+});
+
+// @desc    Delete an entire quiz (and its attempts)
+// @route   DELETE /api/quizzes/:id
+// @access  Private/Teacher (owner only)
+const deleteQuiz = asyncHandler(async (req, res) => {
+  const quiz = await Quiz.findById(req.params.id);
+  if (!quiz) {
+    res.status(404);
+    throw new Error('Quiz not found');
+  }
+  if (quiz.createdBy.toString() !== req.user._id.toString()) {
+    res.status(403);
+    throw new Error('Only the quiz owner can delete this quiz');
+  }
+
+  await Attempt.deleteMany({ quiz: quiz._id });
+  await quiz.deleteOne();
+
+  res.json({ success: true, message: 'Quiz deleted' });
+});
+
+// @desc    Look up a quiz by its shareable code (student joining)
+// @route   GET /api/quizzes/join/:code
+// @access  Private/Student
+const joinQuizByCode = asyncHandler(async (req, res) => {
+  const quiz = await Quiz.findOne({ quizCode: req.params.code.toUpperCase() });
+
+  if (!quiz) {
+    res.status(404);
+    throw new Error('No quiz found with that code');
+  }
+  if (quiz.status !== 'published') {
+    res.status(400);
+    throw new Error('This quiz is not currently open for attempts');
+  }
+
+  // Block joining once the quiz's duration window has passed, even via direct code entry
+  if (quiz.publishedAt) {
+    const expiresAt = quiz.publishedAt.getTime() + quiz.duration * 60 * 1000;
+    if (Date.now() > expiresAt) {
+      res.status(410); // 410 Gone — resource existed but is no longer available
+      throw new Error('This quiz has expired');
+    }
+  }
+
+  const existingAttempt = await Attempt.findOne({ quiz: quiz._id, student: req.user._id });
+  if (existingAttempt) {
+    res.status(400);
+    throw new Error('You have already attempted this quiz');
+  }
+
+  // Strip correct answers before sending to the student
+  const safeQuestions = quiz.questions.map((q) => ({
+    _id: q._id,
+    questionText: q.questionText,
+    options: q.options,
+    difficulty: q.difficulty,
+    marks: q.marks,
+  }));
+
+  res.json({
+    success: true,
+    quiz: {
+      _id: quiz._id,
+      title: quiz.title,
+      description: quiz.description,
+      subject: quiz.subject,
+      duration: quiz.duration,
+      totalMarks: quiz.totalMarks,
+      negativeMarking: quiz.negativeMarking,
+      shuffleQuestions: quiz.shuffleQuestions,
+      shuffleOptions: quiz.shuffleOptions,
+      quizCode: quiz.quizCode,
+      publishedAt: quiz.publishedAt,
+      questions: safeQuestions,
+    },
+  });
+});
+
+// @desc    List published quizzes available for students to browse.
+//          Expired quizzes are NOT removed from the list — they're still
+//          shown, but flagged with isExpired so the UI can grey them out
+//          and disable the "Start quiz" button.
+// @route   GET /api/quizzes/available
+// @access  Private/Student
+const getAvailableQuizzes = asyncHandler(async (req, res) => {
+  const { search = '', page = 1, limit = 9 } = req.query;
+
+  const query = { status: 'published' };
+  if (search) query.$text = { $search: search };
+
+  const attempted = await Attempt.find({ student: req.user._id }).distinct('quiz');
+  query._id = { $nin: attempted };
+
+  const allMatching = await Quiz.find(query)
+    .select('title description subject duration totalMarks quizCode createdAt publishedAt questions')
+    .sort({ createdAt: -1 })
+    .populate('createdBy', 'name');
+
+  const now = Date.now();
+
+  const shapedAll = allMatching.map((q) => {
+    const expiresAt = q.publishedAt ? q.publishedAt.getTime() + q.duration * 60 * 1000 : null;
+    const isExpired = expiresAt ? now > expiresAt : false;
+    return {
+      _id: q._id,
+      title: q.title,
+      description: q.description,
+      subject: q.subject,
+      duration: q.duration,
+      totalMarks: q.totalMarks,
+      quizCode: q.quizCode,
+      questionCount: q.questions.length,
+      createdBy: q.createdBy?.name,
+      createdAt: q.createdAt,
+      publishedAt: q.publishedAt,
+      expiresAt: expiresAt ? new Date(expiresAt) : null,
+      isExpired,
+    };
+  });
+
+  // Active quizzes first, expired ones pushed to the end
+  shapedAll.sort((a, b) => Number(a.isExpired) - Number(b.isExpired));
+
+  const total = shapedAll.length;
+  const skip = (Number(page) - 1) * Number(limit);
+  const pageSlice = shapedAll.slice(skip, skip + Number(limit));
+
+  res.json({
+    success: true,
+    quizzes: pageSlice,
+    pagination: { total, page: Number(page), pages: Math.ceil(total / Number(limit)) },
+  });
+});
+
+module.exports = {
+  createQuiz,
+  getMyQuizzes,
+  getQuizById,
+  updateQuiz,
+  deleteQuestion,
+  publishQuiz,
+  closeQuiz,
+  deleteQuiz,
+  joinQuizByCode,
+  getAvailableQuizzes,
+};

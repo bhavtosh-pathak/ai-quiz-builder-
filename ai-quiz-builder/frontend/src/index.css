@@ -1,0 +1,79 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  html {
+    scroll-behavior: smooth;
+  }
+  body {
+    @apply bg-paper text-ink;
+  }
+  ::selection {
+    @apply bg-gold-300 text-ink;
+  }
+  /* Visible keyboard focus everywhere — accessibility floor */
+  :focus-visible {
+    outline: 2px solid #3b4cca;
+    outline-offset: 2px;
+    border-radius: 4px;
+  }
+  h1, h2, h3, h4 {
+    @apply font-display;
+  }
+}
+
+@layer components {
+  /* Card used across dashboards, quiz lists, question editors */
+  .surface {
+    @apply bg-white border border-ink/10 rounded-xl2 shadow-card;
+  }
+
+  .btn {
+    @apply inline-flex items-center justify-center gap-2 rounded-lg px-4 py-2.5 text-sm font-semibold
+      transition-all duration-150 disabled:opacity-50 disabled:cursor-not-allowed select-none;
+  }
+  .btn-primary {
+    @apply btn bg-primary-500 text-white hover:bg-primary-600 active:bg-primary-700 shadow-sm;
+  }
+  .btn-secondary {
+    @apply btn bg-white text-ink border border-ink/15 hover:border-ink/30 hover:bg-paper-dim;
+  }
+  .btn-gold {
+    @apply btn bg-gold-400 text-ink hover:bg-gold-500 shadow-sm;
+  }
+  .btn-danger {
+    @apply btn bg-danger text-white hover:opacity-90;
+  }
+  .btn-ghost {
+    @apply btn text-ink/70 hover:text-ink hover:bg-ink/5;
+  }
+
+  .input {
+    @apply w-full rounded-lg border border-ink/15 bg-white px-3.5 py-2.5 text-sm text-ink placeholder:text-ink/35
+      focus:border-primary-400 focus:ring-2 focus:ring-primary-100 outline-none transition-colors;
+  }
+  .label {
+    @apply block text-xs font-semibold uppercase tracking-wide text-ink/50 mb-1.5;
+  }
+
+  .badge {
+    @apply inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-xs font-semibold;
+  }
+  .badge-draft { @apply badge bg-ink/8 text-ink/60; }
+  .badge-published { @apply badge bg-success-light text-success; }
+  .badge-closed { @apply badge bg-danger-light text-danger; }
+  .badge-easy { @apply badge bg-success-light text-success; }
+  .badge-medium { @apply badge bg-gold-100 text-gold-600; }
+  .badge-hard { @apply badge bg-danger-light text-danger; }
+
+  /* Signature element: a scantron/ticket-stub styled quiz code chip */
+  .quiz-code-ticket {
+    @apply relative inline-flex items-center gap-3 rounded-lg bg-ink text-paper px-4 py-2.5 font-mono
+      text-lg tracking-[0.3em] shadow-ticket;
+  }
+
+  .section-eyebrow {
+    @apply font-mono text-xs uppercase tracking-[0.2em] text-primary-500 font-semibold;
+  }
+}
