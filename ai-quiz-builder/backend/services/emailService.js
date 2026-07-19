@@ -3,20 +3,18 @@ const nodemailer = require("nodemailer");
 const sendOTPEmail = async (email, otp) => {
 
   const transporter = nodemailer.createTransport({
-    host: "smtp.gmail.com",
+    host: "smtp-relay.brevo.com",
     port: 587,
     secure: false,
-    requireTLS: true,
     auth: {
-      user: process.env.EMAIL_USER,
-      pass: process.env.EMAIL_PASS,
+      user: "b2902c001@smtp-brevo.com",
+      pass: process.env.BREVO_SMTP_KEY,
     },
-    family: 4,
   });
 
   const mailOptions = {
 
-    from: process.env.EMAIL_USER,
+    from: '"AI Quiz Builder" <bhavtoshpathak@gmail.com>',
 
     to: email,
 
