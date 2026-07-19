@@ -290,6 +290,11 @@ const roomParticipants = new Map();
  * Builds a sorted leaderboard (rank, name, score, percentage, submission time)
  * for a given quiz. Shared by the REST leaderboard endpoint and every
  * socket broadcast so both stay perfectly in sync.
+ *
+ * If an attempt is flagged (>= VIOLATION_FLAG_THRESHOLD proctoring
+ * violations, set server-side in attemptController.js), its score and
+ * percentage are zeroed out here — the single source of truth that both
+ * the live dashboard AND the Excel export read from.
  */
 const buildLeaderboard = async (quizId) => {
   const attempts = await Attempt.find({ quiz: quizId })
@@ -301,10 +306,12 @@ const buildLeaderboard = async (quizId) => {
     studentId: a.student._id,
     studentName: a.student.name,
     avatarColor: a.student.avatarColor,
-    score: a.score,
+    score: a.flagged ? 0 : a.score,
     totalMarks: a.totalMarks,
-    percentage: a.percentage,
+    percentage: a.flagged ? 0 : a.percentage,
     submittedAt: a.submittedAt,
+    flagged: a.flagged,
+    violationCount: a.violationCount,
   }));
 };
 

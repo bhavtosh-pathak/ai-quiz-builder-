@@ -122,6 +122,7 @@
 // export default QuizResults;
 
 // new files 
+// new files 
 import { useEffect, useRef, useState } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import toast from 'react-hot-toast';
@@ -243,21 +244,21 @@ const QuizResults = () => {
     };
 
     // Sheet 1 — leaderboard (rank, student, correct answers, percentage).
-    // "Correct" always shows the student's real correct-answer count. But
-    // if they had ANY suspicious activity during the attempt (tab switch,
-    // fullscreen exit, etc.), their Percentage is zeroed out here — the
-    // "Cheating Alert Type" column lists what was flagged.
+    // "Correct" always shows the student's real correct-answer count. The
+    // Percentage column comes straight from the leaderboard data, which the
+    // backend already zeroes out for flagged attempts (>= 3 proctoring
+    // violations) — so this stays perfectly in sync with the live dashboard.
+    // The "Cheating Alert Type" column lists what was flagged, if anything.
     const leaderboardRows = leaderboard.map((row) => {
       const attempt = attemptByStudentId.get(row.studentId?.toString());
       const correctCount = attempt?.correctCount ?? 0;
       const totalQuestions = attempt?.answers?.length ?? quiz.questions?.length ?? 0;
-      const hasSuspiciousActivity = (attempt?.violationCount ?? 0) > 0;
 
       return {
         Rank: row.rank,
         Student: row.studentName,
         Correct: `${correctCount}/${totalQuestions}`,
-        'Percentage (%)': hasSuspiciousActivity ? 0 : row.percentage,
+        'Percentage (%)': row.percentage,
         'Cheating Alert Type': violationTypesText(attempt),
       };
     });
