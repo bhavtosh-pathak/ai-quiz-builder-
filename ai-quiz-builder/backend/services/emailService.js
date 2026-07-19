@@ -1,13 +1,27 @@
-const { Resend } = require('resend');
-
-const resend = new Resend(process.env.RESEND_API_KEY);
+const nodemailer = require("nodemailer");
 
 const sendOTPEmail = async (email, otp) => {
 
-  await resend.emails.send({
-    from: 'AI Quiz Builder <onboarding@resend.dev>',
+  const transporter = nodemailer.createTransport({
+    host: "smtp.gmail.com",
+    port: 587,
+    secure: false,
+    requireTLS: true,
+    auth: {
+      user: process.env.EMAIL_USER,
+      pass: process.env.EMAIL_PASS,
+    },
+    family: 4,
+  });
+
+  const mailOptions = {
+
+    from: process.env.EMAIL_USER,
+
     to: email,
+
     subject: "AI Quiz Builder - OTP Verification",
+
     html: `
       <div style="
         font-family: Arial, sans-serif;
@@ -50,8 +64,13 @@ const sendOTPEmail = async (email, otp) => {
 
       </div>
     `,
-  });
+
+  };
+
+
+  await transporter.sendMail(mailOptions);
 
 };
+
 
 module.exports = sendOTPEmail;
