@@ -161,7 +161,7 @@ const steps = [
   {
     n: '01',
     title: 'Prompt it',
-    body: 'Type "Generate 10 Java OOP MCQs" — Gemini drafts the questions, options, answers and difficulty in seconds.',
+    body: 'Type "Generate Java OOP MCQs" — Gemini drafts the questions, options, answers and difficulty in seconds.',
   },
   {
     n: '02',
@@ -191,8 +191,13 @@ const Landing = () => (
     {/* Hero */}
     <section className="relative overflow-hidden border-b border-ink/10">
       <div className="absolute inset-0 bg-grid-lines bg-[size:28px_28px] opacity-60" />
+      <div className="pointer-events-none absolute -top-24 right-0 h-72 w-72 rounded-full bg-primary-500/10 blur-3xl" />
+      <div className="pointer-events-none absolute -bottom-24 left-0 h-72 w-72 rounded-full bg-gold-400/10 blur-3xl" />
       <div className="relative mx-auto max-w-7xl px-4 py-20 sm:px-6 lg:px-8 lg:py-28">
         <div className="max-w-2xl">
+          <span className="mb-10 inline-flex items-center gap-6 rounded-full border border-ink/10 bg-paper px-3 py-3 text-xs font-semibold text-ink/90 shadow-sm">
+            ✨ Powered by Gemini AI
+          </span>
           <p className="section-eyebrow mb-4">Educator prompt → live classroom quiz</p>
           <h1 className="font-display text-4xl font-semibold leading-[1.05] tracking-tight sm:text-5xl lg:text-6xl">
             Write one sentence.
@@ -203,14 +208,17 @@ const Landing = () => (
             AI Quiz Builder turns a short prompt into a ready-to-run MCQ set, then lets your class compete on a
             leaderboard that updates the instant someone submits — no refresh required.
           </p>
-          <div className="mt-8 flex flex-wrap items-center gap-3">
-            <Link to="/register" className="btn-primary !px-6 !py-3 text-sm">
-              Start building quizzes →
+          {/* <div className="mt-8 flex flex-col gap-3 sm:flex-row sm:items-center">
+            <Link
+              to="/register"
+              className="btn-primary !px-7 !py-3.5 text-sm shadow-lg shadow-primary-500/20 transition-transform hover:-translate-y-0.5"
+            >
+              Try it free — no card needed ✨
             </Link>
-            <Link to="/login" className="btn-secondary !px-6 !py-3 text-sm">
-              I already have an account
-            </Link>
-          </div>
+            <p className="text-xs font-medium text-ink/45">
+              Built by educators, for classrooms that move fast — first quiz in under 2 minutes.
+            </p>
+          </div> */}
         </div>
       </div>
     </section>
@@ -222,8 +230,10 @@ const Landing = () => (
 
       <div className="mt-10 grid gap-8 md:grid-cols-3">
         {steps.map((s) => (
-          <div key={s.n} className="relative pl-2">
-            <p className="font-display text-5xl font-semibold text-ink/10">{s.n}</p>
+          <div key={s.n} className="group relative pl-2 transition-transform hover:-translate-y-1">
+            <p className="font-display text-5xl font-semibold text-ink/10 transition-colors group-hover:text-primary-500/20">
+              {s.n}
+            </p>
             <h3 className="mt-2 font-display text-xl font-semibold">{s.title}</h3>
             <p className="mt-2 text-sm leading-relaxed text-ink/55">{s.body}</p>
           </div>
@@ -239,7 +249,10 @@ const Landing = () => (
 
         <div className="mt-10 grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
           {features.map((f) => (
-            <div key={f.title} className="surface p-5">
+            <div
+              key={f.title}
+              className="surface p-5 transition-all hover:-translate-y-1 hover:shadow-md hover:border-primary-500/30"
+            >
               <h3 className="font-display text-base font-semibold">{f.title}</h3>
               <p className="mt-1.5 text-sm text-ink/55">{f.body}</p>
             </div>
@@ -248,17 +261,20 @@ const Landing = () => (
       </div>
     </section>
 
-    {/* CTA */}
+    {/* CTA — closing quote */}
     <section className="mx-auto max-w-7xl px-4 py-20 sm:px-6 lg:px-8">
-      <div className="surface flex flex-col items-center gap-4 bg-ink px-8 py-14 text-center text-paper">
-        <p className="section-eyebrow !text-gold-400">Ready when you are</p>
-        <h2 className="font-display text-3xl font-semibold tracking-tight sm:text-4xl">
-          Your next quiz is one prompt away.
-        </h2>
-        <div className="mt-2 flex flex-wrap justify-center gap-3">
-          <Link to="/register" className="btn-gold !px-6 !py-3 text-sm">
-            Create a free account
-          </Link>
+      <div className="surface relative overflow-hidden bg-ink px-8 py-16 text-center text-paper">
+        <div className="pointer-events-none absolute -top-16 left-1/2 h-64 w-64 -translate-x-1/2 rounded-full bg-gold-400/10 blur-3xl" />
+        <div className="relative mx-auto max-w-2xl">
+          <p className="section-eyebrow !text-gold-400">Ready when you are</p>
+          <span className="mt-4 block font-display text-5xl text-gold-400/40"></span>
+          <blockquote className="font-display text-2xl font-medium leading-relaxed tracking-tight text-paper sm:text-3xl">
+            "Great teaching moves fast — your assessments should too. One sentence in, a graded quiz and a live
+            scoreboard out. No slides, no spreadsheets, no waiting "
+          </blockquote>
+          <p className="mt-5 text-sm font-semibold uppercase tracking-[0.2em] text-gold-400">
+            — AI Quiz Builder
+          </p>
         </div>
       </div>
     </section>

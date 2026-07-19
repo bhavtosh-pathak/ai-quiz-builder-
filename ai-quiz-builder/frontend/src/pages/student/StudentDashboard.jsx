@@ -33,10 +33,10 @@ const StudentDashboard = () => {
             Welcome back, {user.name.split(' ')[0]}
           </h1>
         </div>
-        <div className="flex gap-2">
+        {/* <div className="flex gap-2">
           <Link to="/student/join" className="btn-gold text-sm">Join by code</Link>
           <Link to="/student/quizzes" className="btn-primary text-sm">Browse quizzes</Link>
-        </div>
+        </div> */}
       </div>
 
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4 mb-8">

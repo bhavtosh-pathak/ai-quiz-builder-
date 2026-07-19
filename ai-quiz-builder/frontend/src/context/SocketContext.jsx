@@ -24,7 +24,7 @@ export const SocketProvider = ({ children }) => {
   const [socketInstance, setSocketInstance] = useState(null);
 
   useEffect(() => {
-    const token = localStorage.getItem('aqb_token');
+    const token = sessionStorage.getItem('aqb_token');
 
     if (!user || !token) {
       // Logged out — close any lingering shared connection.

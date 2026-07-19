@@ -7,7 +7,7 @@ const api = axios.create({
 
 // Attach the JWT to every outgoing request
 api.interceptors.request.use((config) => {
-  const token = localStorage.getItem('aqb_token');
+  const token = sessionStorage.getItem('aqb_token');
   if (token) config.headers.Authorization = `Bearer ${token}`;
   return config;
 });
@@ -20,8 +20,8 @@ api.interceptors.response.use(
     const message = error.response?.data?.message || error.message || 'Something went wrong';
 
     if (status === 401 && window.location.pathname !== '/login') {
-      localStorage.removeItem('aqb_token');
-      localStorage.removeItem('aqb_user');
+      sessionStorage.removeItem('aqb_token');
+      sessionStorage.removeItem('aqb_user');
       window.location.href = '/login';
     }
 

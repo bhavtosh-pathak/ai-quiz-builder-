@@ -10,7 +10,7 @@ import QuizCodeTicket from '../../components/QuizCodeTicket';
 import { quizService } from '../../services/quizService';
 
 const STATUS_OPTIONS = [
-  { value: 'all', label: 'All statuses' },
+  { value: 'all', label: 'All status' },
   { value: 'draft', label: 'Draft' },
   { value: 'published', label: 'Published' },
   { value: 'closed', label: 'Closed' },
@@ -144,16 +144,20 @@ const MyQuizzes = () => {
                   <span>{q.totalMarks} marks</span>
                 </div>
 
-                {q.status !== 'draft' && (
+                {q.status !== 'draft' && q.status !== 'expired' ? (
                   <div className="mt-3">
                     <QuizCodeTicket code={q.quizCode} />
                   </div>
+                ) : (
+                  <div className="mt-3 h-11" aria-hidden="true" />
                 )}
 
                 <div className="mt-4 flex flex-wrap gap-2 pt-3 border-t border-ink/8">
-                  <Link to={`/teacher/quizzes/${q._id}`} className="btn-secondary !py-1.5 !px-3 text-xs">
-                    {q.status === 'draft' ? 'Edit' : 'View'}
-                  </Link>
+                  {q.status === 'draft' && (
+                    <Link to={`/teacher/quizzes/${q._id}`} className="btn-secondary !py-1.5 !px-3 text-xs">
+                      Edit
+                    </Link>
+                  )}
                   <Link to={`/teacher/quizzes/${q._id}/results`} className="btn-secondary !py-1.5 !px-3 text-xs">
                     Results
                   </Link>

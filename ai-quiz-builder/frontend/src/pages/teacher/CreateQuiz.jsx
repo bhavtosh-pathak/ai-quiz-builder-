@@ -55,7 +55,7 @@ const CreateQuiz = () => {
         });
         setQuestions(quiz.questions);
         setStatus(quiz.status);
-        setQuizCode(quiz.quizCode);
+        setQuizCode(quiz.status !== 'draft' ? quiz.quizCode : null);
       })
       .catch((err) => toast.error(err.message))
       .finally(() => setLoading(false));
@@ -120,7 +120,7 @@ const CreateQuiz = () => {
 
       navigate(`/teacher/quizzes/${quiz._id}`, { replace: true });
       setStatus(quiz.status);
-      setQuizCode(quiz.quizCode);
+      setQuizCode(quiz.status !== 'draft' ? quiz.quizCode : null);
     } catch (err) {
       toast.error(err.message);
     } finally {
@@ -134,8 +134,8 @@ const CreateQuiz = () => {
     <DashboardLayout>
       <div className="flex flex-col gap-1 mb-6 sm:flex-row sm:items-end sm:justify-between">
         <div>
-          <p className="section-eyebrow">{isNew ? 'New quiz' : 'Edit quiz'}</p>
-          <h1 className="font-display text-3xl font-semibold tracking-tight">
+          <p className="section-eyebrow">{isNew ? 'New quiz' : isLocked ? 'View quiz' : 'Edit quiz'}</p>
+          <h1 className="font-sans text-3xl font-semibold tracking-tight">
             {quizMeta.title || 'Untitled quiz'}
           </h1>
         </div>
@@ -169,16 +169,6 @@ const CreateQuiz = () => {
               placeholder="e.g. Data Structures"
               value={quizMeta.subject}
               onChange={(e) => setQuizMeta({ ...quizMeta, subject: e.target.value })}
-            />
-          </div>
-          <div>
-            <label className="label">Description</label>
-            <textarea
-              className="input resize-none"
-              rows={3}
-              disabled={isLocked}
-              value={quizMeta.description}
-              onChange={(e) => setQuizMeta({ ...quizMeta, description: e.target.value })}
             />
           </div>
           <div>

@@ -3,16 +3,19 @@ import { authService } from '../services/authService';
 
 const AuthContext = createContext(null);
 
-// Safely read and parse a value from localStorage.
+// Safely read and parse a value from sessionStorage.
 // Handles missing keys, the literal string "undefined", and malformed JSON.
+// sessionStorage (not localStorage) is used deliberately — it's cleared
+// automatically when the browser/tab is closed, so the login doesn't
+// persist across sessions the way localStorage would.
 const safeParse = (key) => {
   try {
-    const stored = localStorage.getItem(key);
+    const stored = sessionStorage.getItem(key);
     if (!stored || stored === 'undefined') return null;
     return JSON.parse(stored);
   } catch (err) {
-    console.error(`Failed to parse localStorage key "${key}":`, err);
-    localStorage.removeItem(key);
+    console.error(`Failed to parse sessionStorage key "${key}":`, err);
+    sessionStorage.removeItem(key);
     return null;
   }
 };
@@ -23,7 +26,7 @@ export const AuthProvider = ({ children }) => {
 
   // On mount, verify the stored token is still valid and refresh the user object
   useEffect(() => {
-    const token = localStorage.getItem('aqb_token');
+    const token = sessionStorage.getItem('aqb_token');
     if (!token) {
       setLoading(false);
       return;
@@ -32,11 +35,11 @@ export const AuthProvider = ({ children }) => {
       .getMe()
       .then(({ user: freshUser }) => {
         setUser(freshUser);
-        localStorage.setItem('aqb_user', JSON.stringify(freshUser));
+        sessionStorage.setItem('aqb_user', JSON.stringify(freshUser));
       })
       .catch(() => {
-        localStorage.removeItem('aqb_token');
-        localStorage.removeItem('aqb_user');
+        sessionStorage.removeItem('aqb_token');
+        sessionStorage.removeItem('aqb_user');
         setUser(null);
       })
       .finally(() => setLoading(false));
@@ -47,8 +50,8 @@ export const AuthProvider = ({ children }) => {
       console.error('persistSession called with invalid data:', { token, userObj });
       return;
     }
-    localStorage.setItem('aqb_token', token);
-    localStorage.setItem('aqb_user', JSON.stringify(userObj));
+    sessionStorage.setItem('aqb_token', token);
+    sessionStorage.setItem('aqb_user', JSON.stringify(userObj));
     setUser(userObj);
   };
 
@@ -72,14 +75,14 @@ export const AuthProvider = ({ children }) => {
 
   const updateProfile = useCallback(async (payload) => {
     const { user: userObj } = await authService.updateMe(payload);
-    localStorage.setItem('aqb_user', JSON.stringify(userObj));
+    sessionStorage.setItem('aqb_user', JSON.stringify(userObj));
     setUser(userObj);
     return userObj;
   }, []);
 
   const logout = useCallback(() => {
-    localStorage.removeItem('aqb_token');
-    localStorage.removeItem('aqb_user');
+    sessionStorage.removeItem('aqb_token');
+    sessionStorage.removeItem('aqb_user');
     setUser(null);
   }, []);
 

@@ -64,37 +64,6 @@ const QuizResult = () => {
   });
 };
 
-  // const downloadCertificate = () => {
-  //   const doc = new jsPDF({ orientation: 'landscape' });
-  //   const pageWidth = doc.internal.pageSize.getWidth();
-  //   const pageHeight = doc.internal.pageSize.getHeight();
-
-  //   doc.setDrawColor(20, 22, 31);
-  //   doc.setLineWidth(1.5);
-  //   doc.rect(10, 10, pageWidth - 20, pageHeight - 20);
-
-  //   doc.setFont('times', 'bold');
-  //   doc.setFontSize(28);
-  //   doc.text('Certificate of Completion', pageWidth / 2, 50, { align: 'center' });
-
-  //   doc.setFont('times', 'normal');
-  //   doc.setFontSize(14);
-  //   doc.text('This certifies that', pageWidth / 2, 70, { align: 'center' });
-
-  //   doc.setFont('times', 'bold');
-  //   doc.setFontSize(22);
-  //   doc.text(user.name, pageWidth / 2, 85, { align: 'center' });
-
-  //   doc.setFont('times', 'normal');
-  //   doc.setFontSize(14);
-  //   doc.text(`successfully completed "${attempt.quiz.title}"`, pageWidth / 2, 100, { align: 'center' });
-  //   doc.text(`scoring ${attempt.score}/${attempt.totalMarks} (${attempt.percentage}%)`, pageWidth / 2, 112, { align: 'center' });
-
-  //   doc.setFontSize(10);
-  //   doc.text(new Date(attempt.submittedAt).toLocaleDateString(), pageWidth / 2, pageHeight - 25, { align: 'center' });
-
-  //   doc.save(`certificate_${attempt.quiz.title.replace(/\s+/g, '_')}.pdf`);
-  // };
   const downloadCertificate = async() => {
   const doc = new jsPDF({
     orientation: "landscape",
@@ -238,12 +207,26 @@ const QuizResult = () => {
   doc.text(
     `Issued on ${new Date(attempt.submittedAt).toLocaleDateString()}`,
     35,
-    pageHeight-25
+    pageHeight-30
   );
 
 
 
-  // Signature
+  // Digital signature (stylized script) — sits just above the signature line
+  doc.setFont("times", "italic");
+  doc.setFontSize(18);
+  doc.setTextColor(30, 35, 45);
+  doc.text(
+    "Bhavtosh Pathak",
+    pageWidth-58,
+    pageHeight-38,
+    {
+      align:"center"
+    }
+  );
+
+  // Signature line
+  doc.setDrawColor(30, 35, 45);
   doc.line(
     pageWidth-80,
     pageHeight-35,
@@ -251,8 +234,11 @@ const QuizResult = () => {
     pageHeight-35
   );
 
+  doc.setFont("times", "normal");
+  doc.setFontSize(11);
+  doc.setTextColor(20,22,31);
   doc.text(
-    "AI Quiz Builder",
+    "Bhavtosh Pathak",
     pageWidth-58,
     pageHeight-30,
     {
@@ -296,7 +282,7 @@ const QuizResult = () => {
             <p className="mt-3 font-display text-5xl font-semibold">{attempt.percentage}%</p>
             <p className="mt-1 font-mono text-sm text-paper/50">
               {attempt.score} / {attempt.totalMarks} marks
-              {location.state?.rank && ` · Rank #${location.state.rank}`}
+              {/* {location.state?.rank && ` · Rank #${location.state.rank}`} */}
             </p>
           </div>
           <div className="grid grid-cols-3 divide-x divide-ink/8 text-center">
@@ -316,9 +302,6 @@ const QuizResult = () => {
         </div>
 
         <div className="flex flex-wrap gap-3 mb-6">
-          <Link to={`/attempts/${attempt.quiz._id}/leaderboard`} className="btn-secondary text-sm">
-            View leaderboard
-          </Link>
           {passed && (
             <button onClick={downloadCertificate} className="btn-gold text-sm">
               🏆 Download certificate

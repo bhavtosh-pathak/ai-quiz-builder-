@@ -128,7 +128,7 @@ const TeacherDashboard = () => {
           )}
         </div>
 
-        <div className="surface p-5">
+        {/* <div className="surface p-5">
           <p className="section-eyebrow mb-4">Top performers</p>
           {topPerformers.length ? (
             <ul className="space-y-3">
@@ -147,7 +147,7 @@ const TeacherDashboard = () => {
           ) : (
             <p className="text-sm text-ink/45">No submissions yet.</p>
           )}
-        </div>
+        </div> */}
       </div>
 
       {/* <div className="surface p-5 mt-6">
