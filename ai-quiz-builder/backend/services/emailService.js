@@ -1,28 +1,13 @@
-const nodemailer = require("nodemailer");
+const { Resend } = require('resend');
+
+const resend = new Resend(process.env.RESEND_API_KEY);
 
 const sendOTPEmail = async (email, otp) => {
 
-  const transporter = nodemailer.createTransport({
-    host: "smtp.gmail.com",
-    port: 465,
-    secure: true,
-    auth: {
-      user: process.env.EMAIL_USER,
-      pass: process.env.EMAIL_PASS,
-    },
-    family: 4, // Force IPv4 to avoid Render's IPv6 ENETUNREACH issue
-  });
-
-
-
-  const mailOptions = {
-
-    from: process.env.EMAIL_USER,
-
+  await resend.emails.send({
+    from: 'AI Quiz Builder <onboarding@resend.dev>',
     to: email,
-
-    subject: "AI Quiz Builder - Password Reset OTP",
-
+    subject: "AI Quiz Builder - OTP Verification",
     html: `
       <div style="
         font-family: Arial, sans-serif;
@@ -42,16 +27,9 @@ const sendOTPEmail = async (email, otp) => {
             AI Quiz Builder
           </h2>
 
-
-          <p>
-            You requested to reset your password.
-          </p>
-
-
           <p>
             Your One Time Password (OTP) is:
           </p>
-
 
           <h1 style="
             color:#d4af37;
@@ -60,11 +38,9 @@ const sendOTPEmail = async (email, otp) => {
             ${otp}
           </h1>
 
-
           <p>
             This OTP is valid for 10 minutes.
           </p>
-
 
           <p style="color:#777;">
             If you did not request this, ignore this email.
@@ -74,13 +50,8 @@ const sendOTPEmail = async (email, otp) => {
 
       </div>
     `,
-
-  };
-
-
-  await transporter.sendMail(mailOptions);
+  });
 
 };
-
 
 module.exports = sendOTPEmail;
