@@ -1,65 +1,67 @@
-const brevo = require('@getbrevo/brevo');
-
-const apiInstance = new brevo.TransactionalEmailsApi();
-apiInstance.authentications['apiKey'].apiKey = process.env.BREVO_API_KEY;
+const axios = require('axios');
 
 const sendOTPEmail = async (email, otp) => {
 
-  const sendSmtpEmail = new brevo.SendSmtpEmail();
-
-  sendSmtpEmail.sender = {
-    name: "AI Quiz Builder",
-    email: "bhavtoshpathak@gmail.com",
-  };
-
-  sendSmtpEmail.to = [{ email }];
-
-  sendSmtpEmail.subject = "AI Quiz Builder - OTP Verification";
-
-  sendSmtpEmail.htmlContent = `
-    <div style="
-      font-family: Arial, sans-serif;
-      padding:20px;
-      background:#f5f5f5;
-    ">
-
-      <div style="
-        max-width:500px;
-        margin:auto;
-        background:white;
-        padding:30px;
-        border-radius:10px;
-      ">
-
-        <h2 style="color:#111827;">
-          AI Quiz Builder
-        </h2>
-
-        <p>
-          Your One Time Password (OTP) is:
-        </p>
-
-        <h1 style="
-          color:#d4af37;
-          letter-spacing:5px;
+  await axios.post(
+    'https://api.brevo.com/v3/smtp/email',
+    {
+      sender: {
+        name: "AI Quiz Builder",
+        email: "bhavtoshpathak@gmail.com",
+      },
+      to: [{ email }],
+      subject: "AI Quiz Builder - OTP Verification",
+      htmlContent: `
+        <div style="
+          font-family: Arial, sans-serif;
+          padding:20px;
+          background:#f5f5f5;
         ">
-          ${otp}
-        </h1>
 
-        <p>
-          This OTP is valid for 10 minutes.
-        </p>
+          <div style="
+            max-width:500px;
+            margin:auto;
+            background:white;
+            padding:30px;
+            border-radius:10px;
+          ">
 
-        <p style="color:#777;">
-          If you did not request this, ignore this email.
-        </p>
+            <h2 style="color:#111827;">
+              AI Quiz Builder
+            </h2>
 
-      </div>
+            <p>
+              Your One Time Password (OTP) is:
+            </p>
 
-    </div>
-  `;
+            <h1 style="
+              color:#d4af37;
+              letter-spacing:5px;
+            ">
+              ${otp}
+            </h1>
 
-  await apiInstance.sendTransacEmail(sendSmtpEmail);
+            <p>
+              This OTP is valid for 10 minutes.
+            </p>
+
+            <p style="color:#777;">
+              If you did not request this, ignore this email.
+            </p>
+
+          </div>
+
+        </div>
+      `,
+    },
+    {
+      headers: {
+        'api-key': process.env.BREVO_API_KEY,
+        'Content-Type': 'application/json',
+        'Accept': 'application/json',
+      },
+    }
+  );
 
 };
 
