@@ -3,10 +3,25 @@ import toast from 'react-hot-toast';
 import DashboardLayout from '../layouts/DashboardLayout';
 import { useAuth } from '../context/AuthContext';
 
+const TEACHER_FEATURES = [
+  { icon: '⚡', label: 'AI Powered Quiz' },
+  { icon: '🧠', label: 'Smart Assessment' },
+  { icon: '📊', label: 'Performance Analytics' },
+];
+
+const STUDENT_FEATURES = [
+  { icon: '🏆', label: 'Live Leaderboards' },
+  { icon: '⏱️', label: 'Timed Challenges' },
+  { icon: '📈', label: 'Track Your Progress' },
+];
+
 const Profile = () => {
   const { user, updateProfile } = useAuth();
   const [form, setForm] = useState({ name: user.name, institution: user.institution || '', password: '' });
   const [saving, setSaving] = useState(false);
+
+  const isTeacher = user.role === 'teacher';
+  const features = isTeacher ? TEACHER_FEATURES : STUDENT_FEATURES;
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -32,26 +47,45 @@ const Profile = () => {
       </div>
 
       <div className="grid gap-6 lg:grid-cols-3 items-stretch">
-        <div className="surface p-6 flex flex-col items-center text-center">
-          <div className="flex flex-1 flex-col items-center justify-center">
+        <div className="surface overflow-hidden flex flex-col">
+          <div className="bg-gradient-to-br from-primary-500 to-primary-700 px-6 py-4 text-center">
+            <p className="text-xs font-semibold uppercase tracking-[0.2em] text-white/80">
+              {isTeacher ? '🎓 Educator Profile' : '🎓 Student Profile'}
+            </p>
+          </div>
+
+          <div className="flex flex-1 flex-col items-center px-6 py-8 text-center">
             <span
               className="grid h-20 w-20 place-items-center rounded-full text-2xl font-semibold text-white shadow-md ring-4 ring-white"
               style={{ backgroundColor: user.avatarColor }}
             >
               {user.name.charAt(0).toUpperCase()}
             </span>
-            <p className="mt-4 font-display text-lg font-semibold">{user.name}</p>
-            <p className="text-sm text-ink/45">{user.email}</p>
-            <span className="badge bg-primary-50 text-primary-600 mt-3 capitalize">{user.role}</span>
-          </div>
 
-          <div className="mt-6 w-full border-t border-ink/8 pt-4">
-            <p className="text-xs text-ink/40">
-              {user.role === 'teacher' ? '📚 Educator account' : '🎓 Student account'}
+            <p className="mt-4 font-display text-lg font-semibold">{user.name}</p>
+            <p className="text-xs text-ink/40">{isTeacher ? 'AI Quiz Creator' : 'AI Quiz Taker'}</p>
+
+            <span className="badge bg-primary-50 text-primary-600 mt-3 capitalize">
+              {isTeacher ? '👨‍🏫 Teacher' : '🧑‍🎓 Student'}
+            </span>
+
+            <p className="mt-4 text-sm text-ink/45">
+              {isTeacher
+                ? 'Creating smart quizzes and interactive learning experiences.'
+                : 'Competing on quizzes and leveling up, one question at a time.'}
             </p>
-            {user.institution && (
-              <p className="mt-1 text-xs font-medium text-ink/55">{user.institution}</p>
-            )}
+
+            <div className="mt-6 w-full space-y-2 border-t border-ink/8 pt-5">
+              {features.map((f) => (
+                <div
+                  key={f.label}
+                  className="flex items-center gap-2 rounded-lg bg-ink/[0.03] px-3 py-2 text-left text-xs font-medium text-ink/60"
+                >
+                  <span>{f.icon}</span>
+                  {f.label}
+                </div>
+              ))}
+            </div>
           </div>
         </div>
 
