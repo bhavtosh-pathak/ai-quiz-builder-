@@ -110,9 +110,9 @@ const AIQuizGenerator = () => {
         <div className="space-y-4">
           <div className="flex items-center justify-between">
             <p className="section-eyebrow">Review & edit ({questions.length})</p>
-            <button onClick={continueToBuilder} className="btn-primary text-sm">
+            {/* <button onClick={continueToBuilder} className="btn-primary text-sm">
               Continue to quiz builder →
-            </button>
+            </button> */}
           </div>
           {questions.map((q, i) => (
             <QuestionEditor
