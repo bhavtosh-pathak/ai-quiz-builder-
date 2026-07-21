@@ -94,7 +94,7 @@ const Navbar = () => {
               aria-expanded={menuOpen}
             >
               <span className="text-base leading-none">{menuOpen ? '✕' : '☰'}</span>
-              <span className="hidden sm:inline">Menu</span>
+              <span className="hidden sm:inline">Explore</span>
             </button>
 
             {/* Dropdown drawer — anchored top-right, animated in */}

@@ -20,6 +20,9 @@
   }
   h1, h2, h3, h4 {
     @apply font-display;
+    font-variant-ligatures: none;
+    -webkit-font-feature-settings: "liga" 0, "clig" 0;
+    font-feature-settings: "liga" 0, "clig" 0;
   }
 }
 
