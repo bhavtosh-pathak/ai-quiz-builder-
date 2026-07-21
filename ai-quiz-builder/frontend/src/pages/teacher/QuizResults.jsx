@@ -167,7 +167,8 @@ const QuizResults = () => {
 
   // The quiz's live window — used to decide when the integrity-alerts panel
   // should disappear (once the quiz's duration has actually elapsed, not
-  // when an individual student submits).
+  // when an individual student submits), and to gate the Export Excel
+  // button so results can only be exported once the quiz has actually ended.
   const quizExpiresAt = quiz?.publishedAt
     ? new Date(quiz.publishedAt).getTime() + (quiz.duration || 0) * 60 * 1000
     : null;
@@ -311,7 +312,12 @@ const QuizResults = () => {
           <Link to={`/teacher/dashboard`} className="btn-secondary text-sm">
             Back to Dashboard
           </Link>
-          <button onClick={exportExcel} disabled={!leaderboard.length} className="btn-primary text-sm">
+          <button
+            onClick={exportExcel}
+            disabled={!quizDurationOver}
+            title={!quizDurationOver ? 'Quiz khatam hone ke baad Export available hoga' : ''}
+            className="btn-primary text-sm disabled:opacity-40 disabled:cursor-not-allowed"
+          >
             Export Excel
           </button>
         </div>
