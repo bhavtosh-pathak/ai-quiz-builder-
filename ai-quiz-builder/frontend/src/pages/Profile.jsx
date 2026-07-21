@@ -31,20 +31,31 @@ const Profile = () => {
         <h1 className="font-display text-3xl font-semibold tracking-tight">Profile</h1>
       </div>
 
-      <div className="grid gap-6 lg:grid-cols-3">
-        <div className="surface p-6 flex flex-col items-center text-center h-fit">
-          <span
-            className="grid h-20 w-20 place-items-center rounded-full text-2xl font-semibold text-white"
-            style={{ backgroundColor: user.avatarColor }}
-          >
-            {user.name.charAt(0).toUpperCase()}
-          </span>
-          <p className="mt-4 font-display text-lg font-semibold">{user.name}</p>
-          <p className="text-sm text-ink/45">{user.email}</p>
-          <span className="badge bg-primary-50 text-primary-600 mt-3 capitalize">{user.role}</span>
+      <div className="grid gap-6 lg:grid-cols-3 items-stretch">
+        <div className="surface p-6 flex flex-col items-center text-center">
+          <div className="flex flex-1 flex-col items-center justify-center">
+            <span
+              className="grid h-20 w-20 place-items-center rounded-full text-2xl font-semibold text-white shadow-md ring-4 ring-white"
+              style={{ backgroundColor: user.avatarColor }}
+            >
+              {user.name.charAt(0).toUpperCase()}
+            </span>
+            <p className="mt-4 font-display text-lg font-semibold">{user.name}</p>
+            <p className="text-sm text-ink/45">{user.email}</p>
+            <span className="badge bg-primary-50 text-primary-600 mt-3 capitalize">{user.role}</span>
+          </div>
+
+          <div className="mt-6 w-full border-t border-ink/8 pt-4">
+            <p className="text-xs text-ink/40">
+              {user.role === 'teacher' ? '📚 Educator account' : '🎓 Student account'}
+            </p>
+            {user.institution && (
+              <p className="mt-1 text-xs font-medium text-ink/55">{user.institution}</p>
+            )}
+          </div>
         </div>
 
-        <form onSubmit={handleSubmit} className="surface p-6 space-y-4 lg:col-span-2">
+        <form onSubmit={handleSubmit} className="surface p-6 space-y-4 lg:col-span-2 h-fit">
           <p className="section-eyebrow">Edit details</p>
           <div>
             <label className="label">Full name</label>
