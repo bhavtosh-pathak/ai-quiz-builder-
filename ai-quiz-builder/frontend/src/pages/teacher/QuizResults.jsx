@@ -308,8 +308,8 @@ const QuizResults = () => {
           </p>
         </div>
         <div className="flex gap-2">
-          <Link to={`/teacher/quizzes/${id}`} className="btn-secondary text-sm">
-            Back to quiz
+          <Link to={`/teacher/dashboard`} className="btn-secondary text-sm">
+            Back to Dashboard
           </Link>
           <button onClick={exportExcel} disabled={!leaderboard.length} className="btn-primary text-sm">
             Export Excel
