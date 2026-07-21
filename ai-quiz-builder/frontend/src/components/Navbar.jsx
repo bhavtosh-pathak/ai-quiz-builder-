@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect } from 'react';
-import { Link, NavLink, useNavigate } from 'react-router-dom';
+import { Link, NavLink, useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 
 const mobileLinkClass = ({ isActive }) =>
@@ -7,9 +7,19 @@ const mobileLinkClass = ({ isActive }) =>
     isActive ? 'text-primary-600 bg-primary-50' : 'text-ink/60 hover:text-ink hover:bg-ink/5'
   }`;
 
+const linkIcons = {
+  'Dashboard': '📊',
+  'My Quizzes': '📝',
+  'AI Generator': '✨',
+  'Browse Quizzes': '🔎',
+  'Join by Code': '🔑',
+  'My Results': '🏆',
+};
+
 const Navbar = () => {
   const { user, logout } = useAuth();
   const navigate = useNavigate();
+  const location = useLocation();
   const [menuOpen, setMenuOpen] = useState(false);
   const menuRef = useRef(null);
 
@@ -25,6 +35,12 @@ const Navbar = () => {
     { to: '/student/results', label: 'My Results' },
   ];
   const links = user?.role === 'teacher' ? teacherLinks : user?.role === 'student' ? studentLinks : [];
+
+  // Find the current section label for the breadcrumb strip below the header —
+  // matches the longest link path that the current URL starts with.
+  const activeLink = [...links]
+    .sort((a, b) => b.to.length - a.to.length)
+    .find((l) => location.pathname.startsWith(l.to));
 
   const handleLogout = () => {
     logout();
@@ -68,12 +84,17 @@ const Navbar = () => {
           {/* Hamburger + Dropdown wrapper — relative so the panel can be positioned against it */}
           <div className="relative" ref={menuRef}>
             <button
-              className="grid h-9 w-9 place-items-center rounded-lg hover:bg-ink/5"
+              className={`flex items-center gap-2 rounded-lg border px-3 py-2 text-sm font-medium transition-colors ${
+                menuOpen
+                  ? 'border-primary-200 bg-primary-50 text-primary-600'
+                  : 'border-ink/10 bg-white text-ink/70 hover:bg-ink/5'
+              }`}
               onClick={() => setMenuOpen((o) => !o)}
               aria-label="Toggle menu"
               aria-expanded={menuOpen}
             >
-              <span className="text-xl leading-none">{menuOpen ? '✕' : '☰'}</span>
+              <span className="text-base leading-none">{menuOpen ? '✕' : '☰'}</span>
+              <span className="hidden sm:inline">Menu</span>
             </button>
 
             {/* Dropdown drawer — anchored top-right, animated in */}
@@ -109,6 +130,7 @@ const Navbar = () => {
                       className={mobileLinkClass}
                       onClick={() => setMenuOpen(false)}
                     >
+                      <span className="mr-2">{linkIcons[l.label]}</span>
                       {l.label}
                     </NavLink>
                   ))}
@@ -146,6 +168,16 @@ const Navbar = () => {
           </div>
         </div>
       </div>
+
+      {/* Secondary strip — shows which section of the app you're currently on */}
+      {user && activeLink && (
+        <div className="border-t border-ink/5 bg-ink/[0.02] px-4 py-2 sm:px-6 lg:px-8">
+          <div className="mx-auto flex max-w-7xl items-center gap-1.5 text-xs font-medium text-ink/50">
+            <span>{linkIcons[activeLink.label]}</span>
+            <span>{activeLink.label}</span>
+          </div>
+        </div>
+      )}
     </header>
   );
 };
