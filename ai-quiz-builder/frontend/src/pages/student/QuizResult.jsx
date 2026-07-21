@@ -272,11 +272,10 @@ const QuizResult = () => {
   if (!attempt) return <DashboardLayout><EmptyState icon="🚫" title="Attempt not found" /></DashboardLayout>;
 
   const passed = attempt.percentage >= 40;
-
-  return (
+return (
     <DashboardLayout>
       <div className="mx-auto max-w-3xl">
-        <div className="surface overflow-hidden mb-6">
+        <div className="surface overflow-hidden">
           <div className="bg-ink px-6 py-8 text-center text-paper">
             <p className="section-eyebrow !text-gold-400 justify-center flex">{attempt.quiz.title}</p>
             <p className="mt-3 font-display text-5xl font-semibold">{attempt.percentage}%</p>
@@ -285,7 +284,8 @@ const QuizResult = () => {
               {/* {location.state?.rank && ` · Rank #${location.state.rank}`} */}
             </p>
           </div>
-          <div className="grid grid-cols-3 divide-x divide-ink/8 text-center">
+
+          <div className="grid grid-cols-3 divide-x divide-ink/8 border-b border-ink/8 text-center">
             <div className="p-4">
               <p className="font-mono text-xl font-semibold text-success">{attempt.correctCount}</p>
               <p className="text-xs text-ink/45">Correct</p>
@@ -299,26 +299,26 @@ const QuizResult = () => {
               <p className="text-xs text-ink/45">Skipped</p>
             </div>
           </div>
+
+          <div className="flex flex-wrap gap-3 px-6 py-4">
+            {passed && (
+              <button onClick={downloadCertificate} className="btn-gold text-sm">
+                🏆 Download certificate
+              </button>
+            )}
+            <Link to="/student/quizzes" className="btn-primary text-sm ml-auto">
+              Find another quiz
+            </Link>
+          </div>
         </div>
 
-        <div className="flex flex-wrap gap-3 mb-6">
-          {passed && (
-            <button onClick={downloadCertificate} className="btn-gold text-sm">
-              🏆 Download certificate
-            </button>
-          )}
-          <Link to="/student/quizzes" className="btn-primary text-sm ml-auto">
-            Find another quiz
-          </Link>
-        </div>
-
-        <p className="section-eyebrow mb-3">Review your answers</p>
-        <div className="space-y-4">
+        <div className="surface mt-6 divide-y divide-ink/8 overflow-hidden">
+          <p className="section-eyebrow px-6 py-4">Review your answers</p>
           {attempt.answers.map((a) => {
             const question = attempt.quiz.questions.find((q) => q._id === a.questionId);
             if (!question) return null;
             return (
-              <div key={a.questionId} className="surface p-5">
+              <div key={a.questionId} className="px-6 py-5">
                 <div className="flex items-start justify-between gap-3">
                   <p className="font-medium text-sm">{question.questionText}</p>
                   <span className={a.isCorrect ? 'badge-easy shrink-0' : 'badge-hard shrink-0'}>
@@ -370,7 +370,5 @@ const QuizResult = () => {
         </div>
       </div>
     </DashboardLayout>
-  );
-};
-
-export default QuizResult;
+  )};
+  export default QuizResult;
