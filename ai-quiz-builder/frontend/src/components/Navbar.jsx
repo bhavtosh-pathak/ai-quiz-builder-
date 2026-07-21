@@ -2,11 +2,6 @@ import { useState, useRef, useEffect } from 'react';
 import { Link, NavLink, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 
-const linkClass = ({ isActive }) =>
-  `px-3 py-2 text-sm font-medium rounded-lg transition-colors ${
-    isActive ? 'text-primary-600 bg-primary-50' : 'text-ink/60 hover:text-ink hover:bg-ink/5'
-  }`;
-
 const mobileLinkClass = ({ isActive }) =>
   `block px-3 py-2 text-sm font-medium rounded-lg transition-colors ${
     isActive ? 'text-primary-600 bg-primary-50' : 'text-ink/60 hover:text-ink hover:bg-ink/5'
@@ -69,46 +64,9 @@ const Navbar = () => {
           <span className="font-display text-lg font-semibold tracking-tight">AI Quiz Builder</span>
         </Link>
 
-        <nav className="hidden md:flex items-center gap-1">
-          {links.map((l) => (
-            <NavLink key={l.to} to={l.to} className={linkClass}>
-              {l.label}
-            </NavLink>
-          ))}
-        </nav>
-
         <div className="flex items-center gap-2">
-          {user ? (
-            <div className="hidden md:flex items-center gap-3">
-              <Link
-                to={user.role === 'teacher' ? '/teacher/profile' : '/student/profile'}
-                className="flex items-center gap-2 rounded-lg px-2 py-1.5 hover:bg-ink/5 transition-colors"
-              >
-                <span
-                  className="grid h-8 w-8 place-items-center rounded-full text-sm font-semibold text-white"
-                  style={{ backgroundColor: user.avatarColor }}
-                >
-                  {user.name.charAt(0).toUpperCase()}
-                </span>
-                <span className="text-sm font-medium">{user.name.split(' ')[0]}</span>
-              </Link>
-              <button onClick={handleLogout} className="btn-ghost !px-3 !py-2 text-sm">
-                Log out
-              </button>
-            </div>
-          ) : (
-            <div className="hidden md:flex items-center gap-2">
-              <Link to="/login" className="btn-ghost !px-3 !py-2 text-sm">
-                Log in
-              </Link>
-              <Link to="/register" className="btn-primary !px-4 !py-2 text-sm">
-                Get started
-              </Link>
-            </div>
-          )}
-
           {/* Hamburger + Dropdown wrapper — relative so the panel can be positioned against it */}
-          <div className="relative md:hidden" ref={menuRef}>
+          <div className="relative" ref={menuRef}>
             <button
               className="grid h-9 w-9 place-items-center rounded-lg hover:bg-ink/5"
               onClick={() => setMenuOpen((o) => !o)}
@@ -128,7 +86,11 @@ const Navbar = () => {
             >
               <div className="p-2">
                 {user && (
-                  <div className="flex items-center gap-2 px-3 py-2 mb-1 border-b border-ink/10 pb-3">
+                  <Link
+                    to={user.role === 'teacher' ? '/teacher/profile' : '/student/profile'}
+                    className="flex items-center gap-2 px-3 py-2 mb-1 border-b border-ink/10 pb-3 hover:bg-ink/5 rounded-lg transition-colors"
+                    onClick={() => setMenuOpen(false)}
+                  >
                     <span
                       className="grid h-8 w-8 place-items-center rounded-full text-sm font-semibold text-white"
                       style={{ backgroundColor: user.avatarColor }}
@@ -136,7 +98,7 @@ const Navbar = () => {
                       {user.name.charAt(0).toUpperCase()}
                     </span>
                     <span className="text-sm font-medium">{user.name.split(' ')[0]}</span>
-                  </div>
+                  </Link>
                 )}
 
                 <nav className="space-y-1">
