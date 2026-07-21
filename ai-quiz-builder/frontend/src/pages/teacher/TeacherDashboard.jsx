@@ -118,14 +118,38 @@ const TeacherDashboard = () => {
         )}
       </div> */}
 
-      <div className="grid gap-6 lg:grid-cols-3">
-        <div className="surface p-5 lg:col-span-2">
-          <p className="section-eyebrow mb-4">Quiz performance</p>
-          {quizPerformance.length ? (
-            <QuizPerformanceChart data={quizPerformance} />
-          ) : (
-            <EmptyState icon="📊" title="No data yet" description="Publish a quiz and collect attempts to see performance here." />
-          )}
+     <div className="grid gap-6">
+        <div className="surface overflow-hidden">
+          <div className="flex items-center justify-between border-b border-ink/8 bg-gradient-to-r from-primary-50 to-gold-50 px-6 py-4">
+            <div className="flex items-center gap-3">
+              <span className="grid h-10 w-10 place-items-center rounded-xl bg-white shadow-sm text-lg">
+                📊
+              </span>
+              <div>
+                <p className="section-eyebrow !mb-0.5">Quiz performance</p>
+                <p className="text-xs text-ink/45">Average scores across your published quizzes</p>
+              </div>
+            </div>
+          </div>
+
+          <div className="p-6">
+            {quizPerformance.length ? (
+              <QuizPerformanceChart data={quizPerformance} />
+            ) : (
+              <div className="flex flex-col items-center justify-center py-14 text-center">
+                <div className="mb-4 grid h-16 w-16 place-items-center rounded-2xl bg-gradient-to-br from-primary-100 to-gold-100 text-3xl">
+                  📈
+                </div>
+                <h3 className="font-display text-lg font-semibold text-ink">No data yet</h3>
+                <p className="mt-1 max-w-xs text-sm text-ink/45">
+                  Publish a quiz and collect attempts to see performance here.
+                </p>
+                <Link to="/teacher/quizzes/new" className="btn-primary mt-5 text-sm">
+                  + Create your first quiz
+                </Link>
+              </div>
+            )}
+          </div>
         </div>
 
         {/* <div className="surface p-5">
