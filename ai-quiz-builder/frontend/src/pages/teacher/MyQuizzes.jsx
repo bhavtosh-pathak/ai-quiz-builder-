@@ -152,27 +152,42 @@ const MyQuizzes = () => {
                   <div className="mt-3 h-11" aria-hidden="true" />
                 )}
 
-                <div className="mt-4 flex flex-wrap gap-2 pt-3 border-t border-ink/8">
+               <div className="mt-4 flex flex-wrap items-center gap-2 pt-3 border-t border-ink/8">
                   {q.status === 'draft' && (
-                    <Link to={`/teacher/quizzes/${q._id}`} className="btn-secondary !py-1.5 !px-3 text-xs">
+                    <Link
+                      to={`/teacher/quizzes/${q._id}`}
+                      className="rounded-full border border-ink/12 bg-white px-4 py-1.5 text-xs font-semibold text-ink/70 shadow-sm transition-all hover:border-ink/20 hover:bg-ink/5"
+                    >
                       Edit
                     </Link>
                   )}
-                  <Link to={`/teacher/quizzes/${q._id}/results`} className="btn-secondary !py-1.5 !px-3 text-xs">
-                    Results
+                  <Link
+                    to={`/teacher/quizzes/${q._id}/results`}
+                    className="rounded-full bg-primary-500 px-4 py-1.5 text-xs font-semibold text-white shadow-sm transition-all hover:bg-primary-600 hover:shadow-md"
+                  >
+                    📊 Results
                   </Link>
                   {q.status === 'draft' && (
-                    <button onClick={() => handlePublish(q._id)} className="btn-gold !py-1.5 !px-3 text-xs">
+                    <button
+                      onClick={() => handlePublish(q._id)}
+                      className="rounded-full bg-gold-500 px-4 py-1.5 text-xs font-semibold text-ink shadow-sm transition-all hover:bg-gold-600 hover:shadow-md"
+                    >
                       Publish
                     </button>
                   )}
                   {q.status === 'published' && (
-                    <button onClick={() => handleClose(q._id)} className="btn-secondary !py-1.5 !px-3 text-xs">
+                    <button
+                      onClick={() => handleClose(q._id)}
+                      className="rounded-full border border-ink/12 bg-white px-4 py-1.5 text-xs font-semibold text-ink/70 shadow-sm transition-all hover:border-ink/20 hover:bg-ink/5"
+                    >
                       Close
                     </button>
                   )}
-                  <button onClick={() => handleDelete(q._id)} className="btn-ghost !py-1.5 !px-3 text-xs text-danger ml-auto">
-                    Delete
+                  <button
+                    onClick={() => handleDelete(q._id)}
+                    className="ml-auto rounded-full border border-danger/20 bg-danger-light px-4 py-1.5 text-xs font-semibold text-danger transition-all hover:bg-danger/10"
+                  >
+                    🗑 Delete
                   </button>
                 </div>
               </div>
