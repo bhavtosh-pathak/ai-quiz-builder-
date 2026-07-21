@@ -64,7 +64,7 @@ const Profile = () => {
               </span>
 
               <p className="mt-4 font-display text-lg font-semibold">{user.name}</p>
-              <p className="text-xs text-ink/40">{isTeacher ? 'AI Quiz Creator' : 'AI Quiz Taker'}</p>
+              {/* <p className="text-xs text-ink/40">{isTeacher ? 'AI Quiz Creator' : 'AI Quiz Taker'}</p> */}
 
               <span className="badge bg-primary-50 text-primary-600 mt-3 capitalize">
                 {isTeacher ? '👨‍🏫 Teacher' : '🧑‍🎓 Student'}
