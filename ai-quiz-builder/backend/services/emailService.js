@@ -74,6 +74,10 @@ const sendOTPEmail = async (email, otp) => {
   const senderEmail = process.env.BREVO_SENDER_EMAIL;
   const senderName = process.env.BREVO_SENDER_NAME || 'AI Quiz Builder';
 
+  console.log('[email] sendOTPEmail called for:', email);
+  console.log('[email] BREVO_API_KEY present?', !!process.env.BREVO_API_KEY);
+  console.log('[email] BREVO_SENDER_EMAIL:', senderEmail);
+
   if (!process.env.BREVO_API_KEY) {
     throw new Error('BREVO_API_KEY is not configured on the server');
   }
@@ -82,7 +86,7 @@ const sendOTPEmail = async (email, otp) => {
   }
 
   try {
-    await axios.post(
+    const response = await axios.post(
       'https://api.brevo.com/v3/smtp/email',
       {
         sender: {
@@ -142,9 +146,8 @@ const sendOTPEmail = async (email, otp) => {
         },
       }
     );
+    console.log('[email] Brevo success response:', response.status, response.data);
   } catch (err) {
-    // Log the real Brevo error server-side for debugging, but never leak
-    // API-key/axios internals to the client — just a clean, actionable message.
     console.error('[email] Brevo API error:', err.response?.status, err.response?.data || err.message);
     throw new Error('Failed to send verification email. Please try again.');
   }

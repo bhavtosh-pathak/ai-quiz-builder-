@@ -812,11 +812,12 @@ const registerUser = asyncHandler(async (req, res) => {
 
 
 
-
+console.log('[register] About to call sendOTPEmail for:', email);
   await sendOTPEmail(
     email,
     otp
   );
+  console.log('[register] sendOTPEmail call completed without throwing');
 
 
 
