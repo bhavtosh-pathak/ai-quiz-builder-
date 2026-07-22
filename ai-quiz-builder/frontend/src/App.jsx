@@ -95,7 +95,10 @@ import ProtectedRoute from './components/ProtectedRoute';
 import Landing from './pages/Landing';
 import Login from './pages/Login';
 import Register from './pages/Register';
-import VerifyEmail from './pages/VerifyEmail';
+import VerifyEmail from './pages/verify-email';
+import ForgotPassword from './pages/forgotpassword';
+import VerifyOTP from './pages/VerifyOTP';
+import ResetPassword from './pages/resetpassword';
 import NotFound from './pages/NotFound';
 import Profile from './pages/Profile';
 import LeaderboardPage from './pages/LeaderboardPage';
@@ -130,6 +133,9 @@ function App() {
         <Route path="/login" element={<Login />} />
         <Route path="/register" element={<Register />} />
         <Route path="/verify-email" element={<VerifyEmail />} />
+        <Route path="/forgot-password" element={<ForgotPassword />} />
+        <Route path="/verify-otp" element={<VerifyOTP />} />
+        <Route path="/reset-password" element={<ResetPassword />} />
 
         {/* Teacher */}
         <Route path="/teacher/dashboard" element={<ProtectedRoute roles={['teacher']}><TeacherDashboard /></ProtectedRoute>} />
