@@ -227,11 +227,11 @@ const BrowseQuizzes = () => {
                     <span>{q.totalMarks} marks</span>
                   </div>
 
-                  {q.studentStatus === 'completed' && q.myScore && (
+                  {/* {q.studentStatus === 'completed' && q.myScore && (
                     <p className="mt-2 text-xs font-semibold text-blue-600">
                       Your score: {q.myScore.score}/{q.totalMarks} ({q.myScore.percentage}%)
                     </p>
-                  )}
+                  )} */}
 
                   <button
                     onClick={() => startQuiz(q.quizCode)}
