@@ -305,8 +305,6 @@
 
 
 
-
-
 const asyncHandler = require('express-async-handler');
 const Quiz = require('../models/Quiz');
 const Attempt = require('../models/Attempt');
@@ -358,31 +356,31 @@ const getMyQuizzes = asyncHandler(async (req, res) => {
   const skip = (Number(page) - 1) * Number(limit);
 
   const [quizzes, total] = await Promise.all([
-  Quiz.find(query)
-  .sort({ createdAt: -1 })
-  .skip(skip)
-  .limit(Number(limit))
-  .select('title description subject duration totalMarks quizCode questions status createdAt publishedAt'),
+    Quiz.find(query)
+      .sort({ createdAt: -1 })
+      .skip(skip)
+      .limit(Number(limit))
+      .select('title description subject duration totalMarks quizCode questions status createdAt publishedAt'),
     Quiz.countDocuments(query),
   ]);
+
   const updatedQuizzes = quizzes.map((q) => {
-  let displayStatus = q.status;
+    let displayStatus = q.status;
 
-  if (q.status === 'published' && q.publishedAt) {
-    const expiresAt = q.publishedAt.getTime() + q.duration * 60 * 1000;
+    if (q.status === 'published' && q.publishedAt) {
+      const expiresAt = q.publishedAt.getTime() + q.duration * 60 * 1000;
+      displayStatus = Date.now() > expiresAt ? 'expired' : 'live';
+    }
 
-    displayStatus = Date.now() > expiresAt ? 'expired' : 'live';
-  }
-
-  return {
-    ...q.toObject(),
-    status: displayStatus
-  };
-});
+    return {
+      ...q.toObject(),
+      status: displayStatus,
+    };
+  });
 
   res.json({
     success: true,
-    quizzes:updatedQuizzes,
+    quizzes: updatedQuizzes,
     pagination: { total, page: Number(page), pages: Math.ceil(total / Number(limit)) },
   });
 });
@@ -586,16 +584,10 @@ const joinQuizByCode = asyncHandler(async (req, res) => {
   });
 });
 
-// @desc    List published quizzes available for students to browse.
-//          Expired quizzes are NOT removed from the list — they're still
-//          shown, but flagged with isExpired so the UI can grey them out
-//          and disable the "Start quiz" button.
-// @route   GET /api/quizzes/available
-// @access  Private/Student
-// @desc    List published quizzes available for students to browse.
-//          Expired quizzes are NOT removed from the list — they're still
-//          shown, but flagged with isExpired so the UI can grey them out
-//          and disable the "Start quiz" button.
+// @desc    List published quizzes for students to browse — shows every
+//          published quiz with its status relative to this student:
+//          'completed' (already attempted), 'expired' (duration over,
+//          never attempted), or 'active' (still open, not attempted).
 // @route   GET /api/quizzes/available
 // @access  Private/Student
 const getAvailableQuizzes = asyncHandler(async (req, res) => {
@@ -604,8 +596,10 @@ const getAvailableQuizzes = asyncHandler(async (req, res) => {
   const query = { status: 'published' };
   if (search) query.$text = { $search: search };
 
-  const attempted = await Attempt.find({ student: req.user._id }).distinct('quiz');
-  query._id = { $nin: attempted };
+  // Map of quizId -> this student's attempt (if any), so we can label
+  // completed quizzes and still show their score in the browse list.
+  const myAttempts = await Attempt.find({ student: req.user._id }).select('quiz score percentage submittedAt');
+  const attemptMap = new Map(myAttempts.map((a) => [a.quiz.toString(), a]));
 
   const allMatching = await Quiz.find(query)
     .select('title description subject duration totalMarks quizCode createdAt publishedAt questions')
@@ -617,6 +611,17 @@ const getAvailableQuizzes = asyncHandler(async (req, res) => {
   const shapedAll = allMatching.map((q) => {
     const expiresAt = q.publishedAt ? q.publishedAt.getTime() + q.duration * 60 * 1000 : null;
     const isExpired = expiresAt ? now > expiresAt : false;
+    const myAttempt = attemptMap.get(q._id.toString());
+
+    let studentStatus;
+    if (myAttempt) {
+      studentStatus = 'completed';
+    } else if (isExpired) {
+      studentStatus = 'expired';
+    } else {
+      studentStatus = 'active';
+    }
+
     return {
       _id: q._id,
       title: q.title,
@@ -631,25 +636,30 @@ const getAvailableQuizzes = asyncHandler(async (req, res) => {
       publishedAt: q.publishedAt,
       expiresAt: expiresAt ? new Date(expiresAt) : null,
       isExpired,
+      studentStatus, // 'completed' | 'expired' | 'active'
+      myScore: myAttempt ? { score: myAttempt.score, percentage: myAttempt.percentage } : null,
     };
   });
 
-  // Active quizzes first (soonest expiring first), then expired ones
-  // (most recently expired first) — so a quiz that just expired shows
-  // at the top of the "expired" group instead of being ordered by
-  // creation date.
+  // Order: active first (soonest expiring first), then completed
+  // (most recently completed first), then expired (most recently
+  // expired first) — so the freshest/most relevant items lead each group.
+  const statusRank = { active: 0, completed: 1, expired: 2 };
   shapedAll.sort((a, b) => {
-    if (a.isExpired !== b.isExpired) {
-      return Number(a.isExpired) - Number(b.isExpired); // active before expired
+    if (statusRank[a.studentStatus] !== statusRank[b.studentStatus]) {
+      return statusRank[a.studentStatus] - statusRank[b.studentStatus];
     }
 
-    if (a.isExpired) {
-      // both expired -> most recently expired first
-      return (b.expiresAt?.getTime() || 0) - (a.expiresAt?.getTime() || 0);
+    if (a.studentStatus === 'active') {
+      return (a.expiresAt?.getTime() || Infinity) - (b.expiresAt?.getTime() || Infinity);
     }
-
-    // both active -> soonest expiring first
-    return (a.expiresAt?.getTime() || Infinity) - (b.expiresAt?.getTime() || Infinity);
+    if (a.studentStatus === 'completed') {
+      const aTime = attemptMap.get(a._id.toString())?.submittedAt?.getTime() || 0;
+      const bTime = attemptMap.get(b._id.toString())?.submittedAt?.getTime() || 0;
+      return bTime - aTime; // most recently completed first
+    }
+    // expired
+    return (b.expiresAt?.getTime() || 0) - (a.expiresAt?.getTime() || 0);
   });
 
   const total = shapedAll.length;
