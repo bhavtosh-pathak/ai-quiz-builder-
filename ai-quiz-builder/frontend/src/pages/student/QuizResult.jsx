@@ -271,7 +271,10 @@ const QuizResult = () => {
   if (loading) return <DashboardLayout><Loader label="Loading result..." /></DashboardLayout>;
   if (!attempt) return <DashboardLayout><EmptyState icon="🚫" title="Attempt not found" /></DashboardLayout>;
 
-  const passed = attempt.percentage >= 40;
+  // A flagged attempt (3+ proctoring violations) never qualifies for a
+  // certificate, regardless of score — the percentage/marks shown above
+  // stay accurate for transparency, but the achievement isn't "clean."
+  const passed = attempt.percentage >= 40 && !attempt.flagged;
 return (
     <DashboardLayout>
       <div className="mx-auto max-w-3xl">
@@ -300,11 +303,16 @@ return (
             </div>
           </div>
 
-          <div className="flex flex-wrap gap-3 px-6 py-4">
+          <div className="flex flex-wrap items-center gap-3 px-6 py-4">
             {passed && (
               <button onClick={downloadCertificate} className="btn-gold text-sm">
                 🏆 Download certificate
               </button>
+            )}
+            {attempt.flagged && attempt.percentage >= 40 && (
+              <span className="text-xs text-danger font-medium px-3 py-2 rounded-lg bg-danger-light">
+                ⚠ Certificate not available — this attempt was flagged for integrity violations
+              </span>
             )}
             <Link to="/student/quizzes" className="btn-primary text-sm ml-auto">
               Find another quiz
