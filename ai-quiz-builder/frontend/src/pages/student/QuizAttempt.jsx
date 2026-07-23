@@ -370,6 +370,7 @@ const QuizAttempt = () => {
   const handleMaxViolations = useCallback(
     (allViolations) => {
       autoSubmitReasonRef.current = 'cheating';
+      violationsRef.current = allViolations; // ← fix: ref को turant, sahi (latest) value se update karo
       toast.error('Too many proctoring violations — submitting your quiz now.');
       doSubmit(true);
     },
