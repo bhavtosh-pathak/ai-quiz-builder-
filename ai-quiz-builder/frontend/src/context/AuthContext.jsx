@@ -110,13 +110,13 @@ import { setUnauthorizedHandler } from '../services/api';
 const AuthContext = createContext(null);
 
 const clearSession = () => {
-  localStorage.removeItem('aqb_token');
-  localStorage.removeItem('aqb_user');
+  sessionStorage.removeItem('aqb_token');
+  sessionStorage.removeItem('aqb_user');
 };
 
 export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(() => {
-    const stored = localStorage.getItem('aqb_user');
+    const stored = sessionStorage.getItem('aqb_user');
     return stored ? JSON.parse(stored) : null;
   });
   const [loading, setLoading] = useState(true);
@@ -127,7 +127,7 @@ export const AuthProvider = ({ children }) => {
   // ProtectedRoute redirect naturally, instead of a hard page reload.
   useEffect(() => {
     setUnauthorizedHandler(() => {
-      const wasLoggedIn = !!localStorage.getItem('aqb_token');
+      const wasLoggedIn = !!sessionStorage.getItem('aqb_token');
       clearSession();
       setUser(null);
       if (wasLoggedIn) {
@@ -138,7 +138,7 @@ export const AuthProvider = ({ children }) => {
 
   // On mount, verify the stored token is still valid and refresh the user object
   useEffect(() => {
-    const token = localStorage.getItem('aqb_token');
+    const token = sessionStorage.getItem('aqb_token');
     if (!token) {
       setLoading(false);
       return;
@@ -147,7 +147,7 @@ export const AuthProvider = ({ children }) => {
       .getMe()
       .then(({ user: freshUser }) => {
         setUser(freshUser);
-        localStorage.setItem('aqb_user', JSON.stringify(freshUser));
+        sessionStorage.setItem('aqb_user', JSON.stringify(freshUser));
       })
       .catch((err) => {
         // A 401 is already handled by the unauthorizedHandler above (it
@@ -171,8 +171,8 @@ export const AuthProvider = ({ children }) => {
       console.error('persistSession called with invalid data:', { token, userObj });
       return;
     }
-    localStorage.setItem('aqb_token', token);
-    localStorage.setItem('aqb_user', JSON.stringify(userObj));
+    sessionStorage.setItem('aqb_token', token);
+    sessionStorage.setItem('aqb_user', JSON.stringify(userObj));
     setUser(userObj);
   };
 
@@ -202,7 +202,7 @@ export const AuthProvider = ({ children }) => {
 
   const updateProfile = useCallback(async (payload) => {
     const { user: userObj } = await authService.updateMe(payload);
-    localStorage.setItem('aqb_user', JSON.stringify(userObj));
+    sessionStorage.setItem('aqb_user', JSON.stringify(userObj));
     setUser(userObj);
     return userObj;
   }, []);
