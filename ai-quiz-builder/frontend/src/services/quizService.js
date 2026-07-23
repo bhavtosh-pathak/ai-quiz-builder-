@@ -11,4 +11,5 @@ export const quizService = {
   close: (id) => api.patch(`/quizzes/${id}/close`).then((r) => r.data),
   remove: (id) => api.delete(`/quizzes/${id}`).then((r) => r.data),
   joinByCode: (code) => api.get(`/quizzes/join/${code}`).then((r) => r.data),
+  getStudentsList: (params) => api.get('/quizzes/students-list', { params }).then((r) => r.data), // NEW
 };

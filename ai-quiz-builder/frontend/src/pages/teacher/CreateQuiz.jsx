@@ -39,6 +39,18 @@ const CreateQuiz = () => {
   const [status, setStatus] = useState('draft');
   const [quizCode, setQuizCode] = useState(null);
 
+  // --- Student assignment state ---
+  const [allStudents, setAllStudents] = useState([]);
+  const [studentSearch, setStudentSearch] = useState('');
+  const [selectedEmails, setSelectedEmails] = useState([]); // [] = public quiz, open to everyone
+
+  useEffect(() => {
+    quizService
+      .getStudentsList({})
+      .then((res) => setAllStudents(res.students))
+      .catch(() => {}); // non-critical, don't block the page on this
+  }, []);
+
   useEffect(() => {
     if (!isEditing) return;
     quizService
@@ -56,12 +68,25 @@ const CreateQuiz = () => {
         setQuestions(quiz.questions);
         setStatus(quiz.status);
         setQuizCode(quiz.status !== 'draft' ? quiz.quizCode : null);
+        setSelectedEmails((quiz.assignedStudents || []).map((s) => s.email));
       })
       .catch((err) => toast.error(err.message))
       .finally(() => setLoading(false));
   }, [id, isEditing]);
 
   const isLocked = status === 'published';
+
+  const toggleStudent = (email) => {
+    setSelectedEmails((prev) =>
+      prev.includes(email) ? prev.filter((e) => e !== email) : [...prev, email]
+    );
+  };
+
+  const filteredStudents = allStudents.filter(
+    (s) =>
+      s.name.toLowerCase().includes(studentSearch.toLowerCase()) ||
+      s.email.toLowerCase().includes(studentSearch.toLowerCase())
+  );
 
   const updateQuestion = (index, updated) => {
     setQuestions((qs) => qs.map((q, i) => (i === index ? updated : q)));
@@ -102,11 +127,13 @@ const CreateQuiz = () => {
     setSaving(true);
     try {
       let quiz;
+      const payload = { ...quizMeta, questions, assignedEmails: selectedEmails };
+
       if (isNew) {
-        const res = await quizService.create({ ...quizMeta, questions });
+        const res = await quizService.create(payload);
         quiz = res.quiz;
       } else {
-        const res = await quizService.update(id, { ...quizMeta, questions });
+        const res = await quizService.update(id, payload);
         quiz = res.quiz;
       }
 
@@ -231,6 +258,52 @@ const CreateQuiz = () => {
               />
             </div>
           )}
+
+          {/* --- Student assignment --- */}
+          <div className="border-t border-ink/10 pt-4">
+            <label className="label">
+              Assign to specific students{' '}
+              <span className="text-ink/40 font-normal">(leave empty = visible to everyone)</span>
+            </label>
+
+            {selectedEmails.length > 0 && (
+              <p className="mb-2 text-xs font-semibold text-gold-600">
+                {selectedEmails.length} student{selectedEmails.length > 1 ? 's' : ''} selected
+              </p>
+            )}
+
+            {!isLocked && (
+              <input
+                className="input mb-2"
+                placeholder="Search students by name or email..."
+                value={studentSearch}
+                onChange={(e) => setStudentSearch(e.target.value)}
+              />
+            )}
+
+            <div className="max-h-48 overflow-y-auto rounded-lg border border-ink/10 divide-y divide-ink/5">
+              {filteredStudents.length === 0 ? (
+                <p className="p-3 text-xs text-ink/40">No students found.</p>
+              ) : (
+                filteredStudents.map((s) => (
+                  <label
+                    key={s.email}
+                    className="flex items-center justify-between gap-2 px-3 py-2 text-sm hover:bg-ink/5 cursor-pointer"
+                  >
+                    <span className="truncate">
+                      {s.name} <span className="text-ink/40">({s.email})</span>
+                    </span>
+                    <input
+                      type="checkbox"
+                      disabled={isLocked}
+                      checked={selectedEmails.includes(s.email)}
+                      onChange={() => toggleStudent(s.email)}
+                    />
+                  </label>
+                ))
+              )}
+            </div>
+          </div>
 
           {!isLocked && (
             <div className="flex flex-col gap-2 pt-2">

@@ -311,10 +311,6 @@
 
 // module.exports = mongoose.model('Quiz', quizSchema);
 
-
-
-
-
 const mongoose = require('mongoose');
 const { customAlphabet } = require('nanoid');
 
@@ -428,9 +424,9 @@ const quizSchema = new mongoose.Schema(
       default: 'draft',
     },
     publishedAt: {
-  type: Date,
-  default: null,
-},
+      type: Date,
+      default: null,
+    },
     aiGenerated: {
       type: Boolean,
       default: false,
@@ -438,6 +434,12 @@ const quizSchema = new mongoose.Schema(
     aiPrompt: {
       type: String,
       default: '',
+    },
+    // If empty/undefined, quiz is public (open to every student).
+    // If it has entries, only those specific students can see/join it.
+    assignedStudents: {
+      type: [{ type: mongoose.Schema.Types.ObjectId, ref: 'User' }],
+      default: undefined,
     },
   },
   { timestamps: true }

@@ -308,6 +308,7 @@
 const asyncHandler = require('express-async-handler');
 const Quiz = require('../models/Quiz');
 const Attempt = require('../models/Attempt');
+const User = require('../models/User');
 
 // @desc    Create a new quiz (manual, empty, or pre-filled with AI questions)
 // @route   POST /api/quizzes
@@ -324,7 +325,21 @@ const createQuiz = asyncHandler(async (req, res) => {
     questions,
     aiGenerated,
     aiPrompt,
+    assignedEmails, // NEW — array of student emails, optional
   } = req.body;
+
+  // Resolve emails -> student user IDs. Unknown/non-student emails are
+  // silently skipped rather than failing the whole request.
+  let assignedStudents;
+  if (Array.isArray(assignedEmails) && assignedEmails.length > 0) {
+    const cleanEmails = assignedEmails.map((e) => String(e).toLowerCase().trim()).filter(Boolean);
+    const matchedStudents = await User.find({
+      email: { $in: cleanEmails },
+      role: 'student',
+    }).select('_id');
+    assignedStudents = matchedStudents.map((s) => s._id);
+    if (assignedStudents.length === 0) assignedStudents = undefined; // none matched -> treat as public
+  }
 
   const quiz = await Quiz.create({
     title,
@@ -338,6 +353,7 @@ const createQuiz = asyncHandler(async (req, res) => {
     aiGenerated: !!aiGenerated,
     aiPrompt: aiPrompt || '',
     createdBy: req.user._id,
+    assignedStudents,
   });
 
   res.status(201).json({ success: true, quiz });
@@ -360,7 +376,8 @@ const getMyQuizzes = asyncHandler(async (req, res) => {
       .sort({ createdAt: -1 })
       .skip(skip)
       .limit(Number(limit))
-      .select('title description subject duration totalMarks quizCode questions status createdAt publishedAt'),
+      .select('title description subject duration totalMarks quizCode questions status createdAt publishedAt assignedStudents')
+      .populate('assignedStudents', 'name email'),
     Quiz.countDocuments(query),
   ]);
 
@@ -389,7 +406,7 @@ const getMyQuizzes = asyncHandler(async (req, res) => {
 // @route   GET /api/quizzes/:id
 // @access  Private
 const getQuizById = asyncHandler(async (req, res) => {
-  const quiz = await Quiz.findById(req.params.id);
+  const quiz = await Quiz.findById(req.params.id).populate('assignedStudents', 'name email');
   if (!quiz) {
     res.status(404);
     throw new Error('Quiz not found');
@@ -436,6 +453,20 @@ const updateQuiz = asyncHandler(async (req, res) => {
     if (req.body[field] !== undefined) quiz[field] = req.body[field];
   });
 
+  // Handle assignedEmails the same way createQuiz does
+  if (req.body.assignedEmails !== undefined) {
+    if (Array.isArray(req.body.assignedEmails) && req.body.assignedEmails.length > 0) {
+      const cleanEmails = req.body.assignedEmails.map((e) => String(e).toLowerCase().trim()).filter(Boolean);
+      const matchedStudents = await User.find({
+        email: { $in: cleanEmails },
+        role: 'student',
+      }).select('_id');
+      quiz.assignedStudents = matchedStudents.length ? matchedStudents.map((s) => s._id) : undefined;
+    } else {
+      quiz.assignedStudents = undefined; // empty selection -> public quiz
+    }
+  }
+
   const updated = await quiz.save();
   res.json({ success: true, quiz: updated });
 });
@@ -480,7 +511,6 @@ const publishQuiz = asyncHandler(async (req, res) => {
 
   quiz.status = 'published';
   quiz.publishedAt = new Date();
-  // publishedAt is stamped automatically by the pre('save') hook in the model
   await quiz.save();
 
   res.json({ success: true, quiz });
@@ -541,11 +571,25 @@ const joinQuizByCode = asyncHandler(async (req, res) => {
     throw new Error('This quiz is not currently open for attempts');
   }
 
-  // Block joining once the quiz's duration window has passed, even via direct code entry
+  // Restricted quiz — only assigned students can join, even with the code
+  if (quiz.assignedStudents?.length) {
+    const isAssigned = quiz.assignedStudents.some((id) => id.toString() === req.user._id.toString());
+    if (!isAssigned) {
+      res.status(403);
+      throw new Error('This quiz is not assigned to you');
+    }
+  }
+
+  // A student can't join a quiz that was published before their account existed
+  if (quiz.publishedAt && quiz.publishedAt < req.user.createdAt) {
+    res.status(403);
+    throw new Error('This quiz is not available to your account');
+  }
+
   if (quiz.publishedAt) {
     const expiresAt = quiz.publishedAt.getTime() + quiz.duration * 60 * 1000;
     if (Date.now() > expiresAt) {
-      res.status(410); // 410 Gone — resource existed but is no longer available
+      res.status(410);
       throw new Error('This quiz has expired');
     }
   }
@@ -556,7 +600,6 @@ const joinQuizByCode = asyncHandler(async (req, res) => {
     throw new Error('You have already attempted this quiz');
   }
 
-  // Strip correct answers before sending to the student
   const safeQuestions = quiz.questions.map((q) => ({
     _id: q._id,
     questionText: q.questionText,
@@ -584,20 +627,26 @@ const joinQuizByCode = asyncHandler(async (req, res) => {
   });
 });
 
-// @desc    List published quizzes for students to browse — shows every
-//          published quiz with its status relative to this student:
-//          'completed' (already attempted), 'expired' (duration over,
-//          never attempted), or 'active' (still open, not attempted).
+// @desc    List published quizzes for students to browse — only quizzes
+//          published on/after the student's account creation, that are
+//          either public (no assignedStudents) or specifically assigned
+//          to this student. Labeled 'completed' / 'expired' / 'active'.
 // @route   GET /api/quizzes/available
 // @access  Private/Student
 const getAvailableQuizzes = asyncHandler(async (req, res) => {
   const { search = '', page = 1, limit = 9 } = req.query;
 
-  const query = { status: 'published' };
+  const query = {
+    status: 'published',
+    publishedAt: { $gte: req.user.createdAt },
+    $or: [
+      { assignedStudents: { $exists: false } },
+      { assignedStudents: { $size: 0 } },
+      { assignedStudents: req.user._id },
+    ],
+  };
   if (search) query.$text = { $search: search };
 
-  // Map of quizId -> this student's attempt (if any), so we can label
-  // completed quizzes and still show their score in the browse list.
   const myAttempts = await Attempt.find({ student: req.user._id }).select('quiz score percentage submittedAt');
   const attemptMap = new Map(myAttempts.map((a) => [a.quiz.toString(), a]));
 
@@ -636,14 +685,11 @@ const getAvailableQuizzes = asyncHandler(async (req, res) => {
       publishedAt: q.publishedAt,
       expiresAt: expiresAt ? new Date(expiresAt) : null,
       isExpired,
-      studentStatus, // 'completed' | 'expired' | 'active'
+      studentStatus,
       myScore: myAttempt ? { score: myAttempt.score, percentage: myAttempt.percentage } : null,
     };
   });
 
-  // Order: active first (soonest expiring first), then completed
-  // (most recently completed first), then expired (most recently
-  // expired first).
   const statusRank = { active: 0, completed: 1, expired: 2 };
   shapedAll.sort((a, b) => {
     if (statusRank[a.studentStatus] !== statusRank[b.studentStatus]) {
@@ -671,6 +717,22 @@ const getAvailableQuizzes = asyncHandler(async (req, res) => {
   });
 });
 
+// @desc    List students (for teacher to pick emails when restricting a quiz)
+// @route   GET /api/quizzes/students-list
+// @access  Private/Teacher
+const getStudentsList = asyncHandler(async (req, res) => {
+  const { search = '' } = req.query;
+  const query = { role: 'student', isActive: true };
+  if (search) {
+    query.$or = [
+      { name: { $regex: search, $options: 'i' } },
+      { email: { $regex: search, $options: 'i' } },
+    ];
+  }
+  const students = await User.find(query).select('name email institution');
+  res.json({ success: true, students });
+});
+
 module.exports = {
   createQuiz,
   getMyQuizzes,
@@ -682,4 +744,5 @@ module.exports = {
   deleteQuiz,
   joinQuizByCode,
   getAvailableQuizzes,
+  getStudentsList,
 };

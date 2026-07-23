@@ -11,6 +11,7 @@ const {
   deleteQuiz,
   joinQuizByCode,
   getAvailableQuizzes,
+  getStudentsList,
 } = require('../controllers/quizController');
 const { protect, authorize } = require('../middleware/authMiddleware');
 const validateRequest = require('../middleware/validateRequest');
@@ -33,12 +34,13 @@ router.post(
 router.get('/mine', authorize('teacher'), getMyQuizzes);
 router.get('/available', authorize('student'), getAvailableQuizzes);
 router.get('/join/:code', authorize('student'), joinQuizByCode);
-
+router.get('/students-list', authorize('teacher'), getStudentsList);
 router.get('/:id', getQuizById);
 router.put('/:id', authorize('teacher'), updateQuiz);
 router.delete('/:id', authorize('teacher'), deleteQuiz);
 router.delete('/:id/questions/:questionId', authorize('teacher'), deleteQuestion);
 router.patch('/:id/publish', authorize('teacher'), publishQuiz);
 router.patch('/:id/close', authorize('teacher'), closeQuiz);
+ // /:id se pehle rakhna zaroori hai
 
 module.exports = router;
