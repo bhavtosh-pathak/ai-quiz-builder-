@@ -47,22 +47,22 @@ const getTeacherDashboard = asyncHandler(async (req, res) => {
   }));
 
   const recentQuizzes = [...quizzes]
-  .sort((a, b) => b.createdAt - a.createdAt)
-  .slice(0, 5)
-  .map((q) => {
-    let displayStatus = q.status;
+    .sort((a, b) => b.createdAt - a.createdAt)
+    .slice(0, 5)
+    .map((q) => {
+      let displayStatus = q.status;
 
-    if (q.status === 'published' && q.publishedAt) {
-      const expiresAt = q.publishedAt.getTime() + q.duration * 60 * 1000;
+      if (q.status === 'published' && q.publishedAt) {
+        const expiresAt = q.publishedAt.getTime() + q.duration * 60 * 1000;
 
-      displayStatus = Date.now() > expiresAt ? 'expired' : 'live';
-    }
+        displayStatus = Date.now() > expiresAt ? 'expired' : 'live';
+      }
 
-    return {
-      ...q.toObject(),
-      status: displayStatus
-    };
-  });
+      return {
+        ...q.toObject(),
+        status: displayStatus,
+      };
+    });
 
   res.json({
     success: true,
@@ -83,19 +83,27 @@ const getStudentDashboard = asyncHandler(async (req, res) => {
     .populate('quiz', 'title subject totalMarks')
     .sort({ submittedAt: 1 });
 
+  // Same eligibility rules as getAvailableQuizzes in quizController:
+  // only quizzes published on/after this student's account creation,
+  // and either public (no assignedStudents) or specifically assigned to them.
   const availableQuizzes = await Quiz.find({
-  status: 'published',
-  _id: { $nin: attempts.map((a) => a.quiz?._id).filter(Boolean) },
-}).select('publishedAt duration');
+    status: 'published',
+    publishedAt: { $gte: req.user.createdAt },
+    _id: { $nin: attempts.map((a) => a.quiz?._id).filter(Boolean) },
+    $or: [
+      { assignedStudents: { $exists: false } },
+      { assignedStudents: { $size: 0 } },
+      { assignedStudents: studentId },
+    ],
+  }).select('publishedAt duration');
 
+  const availableCount = availableQuizzes.filter((q) => {
+    if (!q.publishedAt) return false;
 
-const availableCount = availableQuizzes.filter((q) => {
-  if (!q.publishedAt) return false;
+    const expiresAt = q.publishedAt.getTime() + q.duration * 60 * 1000;
 
-  const expiresAt = q.publishedAt.getTime() + q.duration * 60 * 1000;
-
-  return Date.now() < expiresAt;
-}).length;
+    return Date.now() < expiresAt;
+  }).length;
 
   const totalAttempts = attempts.length;
   const averagePercentage = totalAttempts
