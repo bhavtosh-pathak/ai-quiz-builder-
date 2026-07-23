@@ -91,7 +91,6 @@
 
 
 
-
 import { useEffect, useState, useCallback, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import toast from 'react-hot-toast';
@@ -104,6 +103,29 @@ import { quizService } from '../../services/quizService';
 
 let debounceTimer;
 const REFRESH_INTERVAL_MS = 30000; // re-check expiry status every 30s
+
+// Small helper so the card's badge/button styling stays in one place
+// instead of repeated ternaries in the JSX below.
+const STATUS_CONFIG = {
+  active: {
+    badgeClass: 'bg-green-100 text-green-600',
+    badgeLabel: 'Live',
+    showDot: true,
+    cardOpacity: '',
+  },
+  completed: {
+    badgeClass: 'bg-blue-100 text-blue-600',
+    badgeLabel: 'Completed',
+    showDot: false,
+    cardOpacity: '',
+  },
+  expired: {
+    badgeClass: 'bg-red-100 text-red-600',
+    badgeLabel: 'Expired',
+    showDot: false,
+    cardOpacity: 'opacity-60',
+  },
+};
 
 const BrowseQuizzes = () => {
   const navigate = useNavigate();
@@ -179,40 +201,54 @@ const BrowseQuizzes = () => {
       ) : (
         <>
           <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
-            {quizzes.map((q) => (
-              <div key={q._id} className={`surface flex flex-col p-5 ${q.isExpired ? 'opacity-60' : ''}`}>
-               <div className="flex items-start justify-between gap-2">
-  <h3 className="font-display text-lg font-semibold leading-snug">
-    {q.title}
-  </h3>
+            {quizzes.map((q) => {
+              const status = STATUS_CONFIG[q.studentStatus] || STATUS_CONFIG.active;
+              const isLocked = q.studentStatus === 'expired' || q.studentStatus === 'completed';
 
-  {q.isExpired ? (
-    <span className="shrink-0 rounded-full bg-red-100 px-2 py-0.5 text-xs font-semibold text-red-600">
-      Expired
-    </span>
-  ) : (
-    <span className="flex items-center gap-1 shrink-0 rounded-full bg-green-100 px-2 py-0.5 text-xs font-semibold text-green-600">
-      <span className="h-2 w-2 rounded-full bg-green-500"></span>
-      Live
-    </span>
-  )}
-</div>
-                <p className="mt-1 text-xs text-ink/45">{q.subject} · by {q.createdBy}</p>
-                <p className="mt-2 line-clamp-2 text-sm text-ink/55">{q.description || 'No description provided.'}</p>
-                <div className="mt-3 flex items-center gap-4 text-xs font-mono text-ink/45">
-                  <span>{q.questionCount} questions</span>
-                  <span>{q.duration} min</span>
-                  <span>{q.totalMarks} marks</span>
+              return (
+                <div key={q._id} className={`surface flex flex-col p-5 ${status.cardOpacity}`}>
+                  <div className="flex items-start justify-between gap-2">
+                    <h3 className="font-display text-lg font-semibold leading-snug">
+                      {q.title}
+                    </h3>
+
+                    <span className={`flex items-center gap-1 shrink-0 rounded-full px-2 py-0.5 text-xs font-semibold ${status.badgeClass}`}>
+                      {status.showDot && <span className="h-2 w-2 rounded-full bg-green-500"></span>}
+                      {status.badgeLabel}
+                    </span>
+                  </div>
+
+                  <p className="mt-1 text-xs text-ink/45">{q.subject} · by {q.createdBy}</p>
+                  <p className="mt-2 line-clamp-2 text-sm text-ink/55">{q.description || 'No description provided.'}</p>
+
+                  <div className="mt-3 flex items-center gap-4 text-xs font-mono text-ink/45">
+                    <span>{q.questionCount} questions</span>
+                    <span>{q.duration} min</span>
+                    <span>{q.totalMarks} marks</span>
+                  </div>
+
+                  {q.studentStatus === 'completed' && q.myScore && (
+                    <p className="mt-2 text-xs font-semibold text-blue-600">
+                      Your score: {q.myScore.score}/{q.totalMarks} ({q.myScore.percentage}%)
+                    </p>
+                  )}
+
+                  <button
+                    onClick={() => startQuiz(q.quizCode)}
+                    disabled={isLocked || startingCode === q.quizCode}
+                    className="btn-primary mt-4 w-full disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    {q.studentStatus === 'completed'
+                      ? 'Completed'
+                      : q.studentStatus === 'expired'
+                      ? 'Expired'
+                      : startingCode === q.quizCode
+                      ? 'Starting…'
+                      : 'Start quiz'}
+                  </button>
                 </div>
-                <button
-                  onClick={() => startQuiz(q.quizCode)}
-                  disabled={q.isExpired || startingCode === q.quizCode}
-                  className="btn-primary mt-4 w-full disabled:opacity-50 disabled:cursor-not-allowed"
-                >
-                  {q.isExpired ? 'Expired' : startingCode === q.quizCode ? 'Starting…' : 'Start quiz'}
-                </button>
-              </div>
-            ))}
+              );
+            })}
           </div>
           <div className="mt-6">
             <Pagination page={pagination.page} pages={pagination.pages} onChange={fetchQuizzes} />

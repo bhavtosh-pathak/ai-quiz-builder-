@@ -643,22 +643,20 @@ const getAvailableQuizzes = asyncHandler(async (req, res) => {
 
   // Order: active first (soonest expiring first), then completed
   // (most recently completed first), then expired (most recently
-  // expired first) — so the freshest/most relevant items lead each group.
+  // expired first).
   const statusRank = { active: 0, completed: 1, expired: 2 };
   shapedAll.sort((a, b) => {
     if (statusRank[a.studentStatus] !== statusRank[b.studentStatus]) {
       return statusRank[a.studentStatus] - statusRank[b.studentStatus];
     }
-
     if (a.studentStatus === 'active') {
       return (a.expiresAt?.getTime() || Infinity) - (b.expiresAt?.getTime() || Infinity);
     }
     if (a.studentStatus === 'completed') {
       const aTime = attemptMap.get(a._id.toString())?.submittedAt?.getTime() || 0;
       const bTime = attemptMap.get(b._id.toString())?.submittedAt?.getTime() || 0;
-      return bTime - aTime; // most recently completed first
+      return bTime - aTime;
     }
-    // expired
     return (b.expiresAt?.getTime() || 0) - (a.expiresAt?.getTime() || 0);
   });
 
