@@ -592,6 +592,12 @@ const joinQuizByCode = asyncHandler(async (req, res) => {
 //          and disable the "Start quiz" button.
 // @route   GET /api/quizzes/available
 // @access  Private/Student
+// @desc    List published quizzes available for students to browse.
+//          Expired quizzes are NOT removed from the list — they're still
+//          shown, but flagged with isExpired so the UI can grey them out
+//          and disable the "Start quiz" button.
+// @route   GET /api/quizzes/available
+// @access  Private/Student
 const getAvailableQuizzes = asyncHandler(async (req, res) => {
   const { search = '', page = 1, limit = 9 } = req.query;
 
@@ -628,8 +634,23 @@ const getAvailableQuizzes = asyncHandler(async (req, res) => {
     };
   });
 
-  // Active quizzes first, expired ones pushed to the end
-  shapedAll.sort((a, b) => Number(a.isExpired) - Number(b.isExpired));
+  // Active quizzes first (soonest expiring first), then expired ones
+  // (most recently expired first) — so a quiz that just expired shows
+  // at the top of the "expired" group instead of being ordered by
+  // creation date.
+  shapedAll.sort((a, b) => {
+    if (a.isExpired !== b.isExpired) {
+      return Number(a.isExpired) - Number(b.isExpired); // active before expired
+    }
+
+    if (a.isExpired) {
+      // both expired -> most recently expired first
+      return (b.expiresAt?.getTime() || 0) - (a.expiresAt?.getTime() || 0);
+    }
+
+    // both active -> soonest expiring first
+    return (a.expiresAt?.getTime() || Infinity) - (b.expiresAt?.getTime() || Infinity);
+  });
 
   const total = shapedAll.length;
   const skip = (Number(page) - 1) * Number(limit);
