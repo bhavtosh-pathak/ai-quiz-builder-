@@ -295,24 +295,30 @@ const roomParticipants = new Map();
  * violations, set server-side in attemptController.js), its score and
  * percentage are zeroed out here — the single source of truth that both
  * the live dashboard AND the Excel export read from.
+ *
+ * Attempts whose `student` reference no longer resolves (e.g. the account
+ * was deleted after the attempt was made) are skipped rather than crashing
+ * the whole leaderboard build.
  */
 const buildLeaderboard = async (quizId) => {
   const attempts = await Attempt.find({ quiz: quizId })
     .populate('student', 'name avatarColor')
     .sort({ score: -1, submittedAt: 1 });
 
-  return attempts.map((a, index) => ({
-    rank: index + 1,
-    studentId: a.student._id,
-    studentName: a.student.name,
-    avatarColor: a.student.avatarColor,
-    score: a.flagged ? 0 : a.score,
-    totalMarks: a.totalMarks,
-    percentage: a.flagged ? 0 : a.percentage,
-    submittedAt: a.submittedAt,
-    flagged: a.flagged,
-    violationCount: a.violationCount,
-  }));
+  return attempts
+    .filter((a) => a.student) // guard against orphaned/deleted student references
+    .map((a, index) => ({
+      rank: index + 1,
+      studentId: a.student._id,
+      studentName: a.student.name,
+      avatarColor: a.student.avatarColor,
+      score: a.flagged ? 0 : a.score,
+      totalMarks: a.totalMarks,
+      percentage: a.flagged ? 0 : a.percentage,
+      submittedAt: a.submittedAt,
+      flagged: a.flagged,
+      violationCount: a.violationCount,
+    }));
 };
 
 /**

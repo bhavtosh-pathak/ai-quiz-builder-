@@ -113,30 +113,42 @@ const submitAttempt = asyncHandler(async (req, res) => {
   });
 
   // Real-time: push the fresh leaderboard to everyone watching this quiz room.
+  // Wrapped in try/catch — a broadcast failure (e.g. an orphaned student
+  // reference elsewhere in this quiz's attempts) must never break the
+  // student's own submission, since the attempt is already saved above.
   const io = req.app.get('io');
   if (io) {
-    const leaderboard = await buildLeaderboard(quiz._id);
-    io.to(`quiz:${quiz._id}`).emit('leaderboard:update', leaderboard);
-    io.to(`quiz:${quiz._id}`).emit('attempt:new', {
-      studentName: req.user.name,
-      score,
-      percentage,
-    });
-    if (attempt.flagged) {
-      io.to(`quiz:${quiz._id}`).emit('quiz:cheatingDetected', {
-        quizId: quiz._id.toString(),
-        studentId: req.user._id.toString(),
+    try {
+      const leaderboard = await buildLeaderboard(quiz._id);
+      io.to(`quiz:${quiz._id}`).emit('leaderboard:update', leaderboard);
+      io.to(`quiz:${quiz._id}`).emit('attempt:new', {
         studentName: req.user.name,
-        type: 'submission_flagged',
-        violationCount: attempt.violationCount,
-        timestamp: new Date().toISOString(),
+        score,
+        percentage,
       });
+      if (attempt.flagged) {
+        io.to(`quiz:${quiz._id}`).emit('quiz:cheatingDetected', {
+          quizId: quiz._id.toString(),
+          studentId: req.user._id.toString(),
+          studentName: req.user.name,
+          type: 'submission_flagged',
+          violationCount: attempt.violationCount,
+          timestamp: new Date().toISOString(),
+        });
+      }
+    } catch (err) {
+      console.error('[submitAttempt] leaderboard broadcast failed:', err.message);
     }
   }
 
   // This student's attempt is now over — clear any live cheating alert for
   // them from the "Live Cheating Alerts" box on the teacher dashboard.
-  await notifyAttemptEnded(quiz._id, req.user._id);
+  // Also wrapped so a failure here can't break the response either.
+  try {
+    await notifyAttemptEnded(quiz._id, req.user._id);
+  } catch (err) {
+    console.error('[submitAttempt] notifyAttemptEnded failed:', err.message);
+  }
 
   res.status(201).json({
     success: true,
